@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
-import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic } from "lucide-react";
+import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
@@ -112,6 +112,69 @@ function ConferenciaPage() {
   };
 
   const updateQuantity = (item: Item, delta: number) => addQty(item.id, delta);
+
+  const playCompleteSound = () => {
+    try {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AC();
+      const beep = (freq: number, start: number, dur: number, gain = 0.9) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0, ctx.currentTime + start);
+        g.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.01);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + dur + 0.05);
+      };
+      beep(880, 0, 0.18);
+      beep(1320, 0.22, 0.18);
+      beep(1760, 0.44, 0.4, 1.0);
+      setTimeout(() => ctx.close(), 1300);
+    } catch {
+      /* noop */
+    }
+    if ("vibrate" in navigator) navigator.vibrate([120, 60, 120, 60, 240]);
+  };
+
+  const [finalizando, setFinalizando] = useState(false);
+
+  const finalizarNota = async () => {
+    setFinalizando(true);
+    const pendentes = itens.filter((i) => Number(i.qtd_conferida) < Number(i.qtd_esperada));
+    if (pendentes.length > 0) {
+      const results = await Promise.all(
+        pendentes.map((i) =>
+          supabase
+            .from("recebimento_itens")
+            .update({ qtd_conferida: Number(i.qtd_esperada), status: "ok" })
+            .eq("id", i.id),
+        ),
+      );
+      if (results.find((r) => r.error)) {
+        setFinalizando(false);
+        toast.error("Falha ao conferir todos os itens");
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["itens", id] });
+    }
+    const novoStatus = totals.divergencias > 0 ? "divergencia" : "conferido";
+    const { error } = await supabase
+      .from("recebimentos")
+      .update({ status: novoStatus, finalizado_at: new Date().toISOString() })
+      .eq("id", id);
+    setFinalizando(false);
+    if (error) {
+      toast.error("Falha ao finalizar nota");
+      return;
+    }
+    playCompleteSound();
+    toast.success("Nota conferida!", { description: `NF #${receb?.numero_nf}` });
+    qc.invalidateQueries({ queryKey: ["recebimento", id] });
+    qc.invalidateQueries({ queryKey: ["recebimentos"] });
+  };
 
   const applyDetected = async (itemId: string, qtd: number) => {
     const item = itens.find((i) => i.id === itemId);
@@ -321,6 +384,24 @@ function ConferenciaPage() {
             );
           })}
         </div>
+
+        {/* Finalizar */}
+        <div className="sticky bottom-3 mt-6 z-10">
+          <button
+            onClick={finalizarNota}
+            disabled={finalizando || receb.status === "conferido"}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-5 py-4 text-base font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            {receb.status === "conferido"
+              ? "Nota já conferida"
+              : finalizando
+              ? "Finalizando…"
+              : totals.conferidos === totals.total
+              ? "Nota conferida"
+              : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+          </button>
+        </div>
       </div>
 
       <CameraDetector
@@ -337,6 +418,10 @@ function ConferenciaPage() {
         activeId={activeId}
         onSelect={(itemId) => setActiveId(itemId)}
         onAddQty={addQty}
+        onFinalizar={async () => {
+          await finalizarNota();
+          setVoiceOpen(false);
+        }}
       />
     </AppShell>
   );

@@ -19,6 +19,7 @@ type Props = {
   activeId: string | null;
   onSelect: (itemId: string) => void;
   onAddQty: (itemId: string, delta: number) => void | Promise<void>;
+  onFinalizar?: () => void | Promise<void>;
 };
 
 function normalize(s: string) {
@@ -29,7 +30,7 @@ function normalize(s: string) {
     .trim();
 }
 
-export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAddQty }: Props) {
+export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAddQty, onFinalizar }: Props) {
   const [interim, setInterim] = useState("");
   const [log, setLog] = useState<{ id: number; text: string; kind: "in" | "out" | "err" }[]>([]);
   const counterRef = useRef(0);
@@ -78,6 +79,19 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
     if (/(fechar|sair|encerrar)\s*(microfone|voz)?/.test(n)) {
       push("Fechando voz", "out");
       onClose();
+      return;
+    }
+    // finalizar nota / conferir todos
+    if (/(finalizar|encerrar|fechar)\s+(nota|conferencia|conferência)/.test(n) ||
+        /^(conferir|conferi)\s+(todos|tudo)/.test(n) ||
+        /^(nota\s+)?conferida/.test(n) ||
+        /^finalizar$/.test(n)) {
+      if (onFinalizar) {
+        push("✓ Finalizando nota…", "out");
+        await onFinalizar();
+      } else {
+        push("Ação não disponível", "err");
+      }
       return;
     }
     // navigation
@@ -166,7 +180,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
     onInterim: setInterim,
   });
 
-  // Auto start when opens
+  // Auto start when opens — warm up mic with quality constraints first
   useEffect(() => {
     if (!open) {
       stop();
@@ -179,8 +193,31 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       });
       return;
     }
-    start();
-    return () => stop();
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    (async () => {
+      try {
+        if (navigator.mediaDevices?.getUserMedia) {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              channelCount: 1,
+              sampleRate: 48000,
+            } as MediaTrackConstraints,
+          });
+        }
+      } catch {
+        /* permission may still work via SpeechRecognition */
+      }
+      if (!cancelled) start();
+    })();
+    return () => {
+      cancelled = true;
+      stop();
+      stream?.getTracks().forEach((t) => t.stop());
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -285,6 +322,8 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
           <Hint icon="✓" label='"ok"' desc="Completa esperado" />
           <Hint icon={<ChevronDown className="inline h-3 w-3" />} label='"próximo"' desc="Avança" />
           <Hint icon={<ChevronUp className="inline h-3 w-3" />} label='"anterior"' desc="Volta" />
+          <Hint icon="🏁" label='"conferir todos"' desc="Finaliza nota" />
+          <Hint icon="🏁" label='"finalizar nota"' desc="Encerra conferência" />
         </div>
 
         {error && (
