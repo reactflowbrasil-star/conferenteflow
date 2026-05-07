@@ -42,6 +42,8 @@ serve(async (req) => {
 Analise a foto enviada (palete, caixas empilhadas, embalagens master) e estime:
 - quantas caixas/unidades estão visíveis
 - prováveis produtos (correlacionando com o catálogo da NF-e abaixo)
+- TIPO de embalagem visível: "caixa_master" (caixa fechada com várias unidades dentro), "unidade" (peça avulsa) ou "desconhecida"
+- quando for caixa_master, estime "unidades_por_caixa" se possível ler na embalagem (ex.: "12x500ml" => 12). Caso não consiga, use 1.
 - divergências aparentes (caixa amassada, validade, embalagem rompida)
 Seja conservador: prefira faixas e marque baixa confiança quando a imagem for ambígua.
 
@@ -82,10 +84,13 @@ ${catalogo || "(sem itens informados)"}`;
                     properties: {
                       ean: { type: "string", description: "EAN do catálogo, vazio se desconhecido" },
                       descricao: { type: "string" },
-                      qtd_detectada: { type: "integer" },
+                      qtd_detectada: { type: "integer", description: "Quantidade total em UNIDADES (caixas × unidades_por_caixa)" },
+                      caixas_detectadas: { type: "integer", description: "Número de caixas/embalagens visíveis" },
+                      unidades_por_caixa: { type: "integer", description: "Unidades dentro de cada caixa master, 1 se for unidade avulsa" },
+                      tipo_embalagem: { type: "string", enum: ["caixa_master", "unidade", "desconhecida"] },
                       confianca: { type: "string", enum: ["alta", "media", "baixa"] },
                     },
-                    required: ["descricao", "qtd_detectada", "confianca"],
+                    required: ["descricao", "qtd_detectada", "caixas_detectadas", "unidades_por_caixa", "tipo_embalagem", "confianca"],
                     additionalProperties: false,
                   },
                 },
