@@ -418,6 +418,10 @@ function ConferenciaPage() {
         activeId={activeId}
         onSelect={(itemId) => setActiveId(itemId)}
         onAddQty={addQty}
+        onFinalizar={async () => {
+          await finalizarNota();
+          setVoiceOpen(false);
+        }}
       />
     </AppShell>
   );
