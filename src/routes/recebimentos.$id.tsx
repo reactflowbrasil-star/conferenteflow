@@ -384,6 +384,24 @@ function ConferenciaPage() {
             );
           })}
         </div>
+
+        {/* Finalizar */}
+        <div className="sticky bottom-3 mt-6 z-10">
+          <button
+            onClick={finalizarNota}
+            disabled={finalizando || receb.status === "conferido"}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-5 py-4 text-base font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            {receb.status === "conferido"
+              ? "Nota já conferida"
+              : finalizando
+              ? "Finalizando…"
+              : totals.conferidos === totals.total
+              ? "Nota conferida"
+              : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+          </button>
+        </div>
       </div>
 
       <CameraDetector
