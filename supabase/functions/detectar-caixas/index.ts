@@ -42,6 +42,8 @@ serve(async (req) => {
 Analise a foto enviada (palete, caixas empilhadas, embalagens master) e estime:
 - quantas caixas/unidades estão visíveis
 - prováveis produtos (correlacionando com o catálogo da NF-e abaixo)
+- TIPO de embalagem visível: "caixa_master" (caixa fechada com várias unidades dentro), "unidade" (peça avulsa) ou "desconhecida"
+- quando for caixa_master, estime "unidades_por_caixa" se possível ler na embalagem (ex.: "12x500ml" => 12). Caso não consiga, use 1.
 - divergências aparentes (caixa amassada, validade, embalagem rompida)
 Seja conservador: prefira faixas e marque baixa confiança quando a imagem for ambígua.
 
