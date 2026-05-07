@@ -30,7 +30,7 @@ function normalize(s: string) {
     .trim();
 }
 
-export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAddQty }: Props) {
+export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAddQty, onFinalizar }: Props) {
   const [interim, setInterim] = useState("");
   const [log, setLog] = useState<{ id: number; text: string; kind: "in" | "out" | "err" }[]>([]);
   const counterRef = useRef(0);
