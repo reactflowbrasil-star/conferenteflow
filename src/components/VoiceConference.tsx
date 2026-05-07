@@ -81,6 +81,19 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       onClose();
       return;
     }
+    // finalizar nota / conferir todos
+    if (/(finalizar|encerrar|fechar)\s+(nota|conferencia|conferência)/.test(n) ||
+        /^(conferir|conferi)\s+(todos|tudo)/.test(n) ||
+        /^(nota\s+)?conferida/.test(n) ||
+        /^finalizar$/.test(n)) {
+      if (onFinalizar) {
+        push("✓ Finalizando nota…", "out");
+        await onFinalizar();
+      } else {
+        push("Ação não disponível", "err");
+      }
+      return;
+    }
     // navigation
     if (/^(proximo|próximo|avancar|avançar|seguinte)/.test(n)) {
       const list = itensRef.current;
