@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
-import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic } from "lucide-react";
+import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
