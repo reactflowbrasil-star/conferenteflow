@@ -322,6 +322,8 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
           <Hint icon="✓" label='"ok"' desc="Completa esperado" />
           <Hint icon={<ChevronDown className="inline h-3 w-3" />} label='"próximo"' desc="Avança" />
           <Hint icon={<ChevronUp className="inline h-3 w-3" />} label='"anterior"' desc="Volta" />
+          <Hint icon="🏁" label='"conferir todos"' desc="Finaliza nota" />
+          <Hint icon="🏁" label='"finalizar nota"' desc="Encerra conferência" />
         </div>
 
         {error && (
