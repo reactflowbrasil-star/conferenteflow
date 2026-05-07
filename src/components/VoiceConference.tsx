@@ -180,7 +180,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
     onInterim: setInterim,
   });
 
-  // Auto start when opens
+  // Auto start when opens — warm up mic with quality constraints first
   useEffect(() => {
     if (!open) {
       stop();
@@ -193,8 +193,31 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       });
       return;
     }
-    start();
-    return () => stop();
+    let cancelled = false;
+    let stream: MediaStream | null = null;
+    (async () => {
+      try {
+        if (navigator.mediaDevices?.getUserMedia) {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              channelCount: 1,
+              sampleRate: 48000,
+            } as MediaTrackConstraints,
+          });
+        }
+      } catch {
+        /* permission may still work via SpeechRecognition */
+      }
+      if (!cancelled) start();
+    })();
+    return () => {
+      cancelled = true;
+      stop();
+      stream?.getTracks().forEach((t) => t.stop());
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
