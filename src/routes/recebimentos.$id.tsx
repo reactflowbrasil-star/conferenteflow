@@ -372,11 +372,11 @@ function ConferenciaPage() {
                         {item.ean}
                       </span>
                     </div>
-                    <div className="mt-0.5 truncate text-sm font-semibold">
+                    <div className="mt-0.5 break-words text-sm font-semibold leading-snug">
                       {item.descricao}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      {item.lote && <span>Lote {item.lote}</span>}
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                      {item.lote && <span className="break-all">Lote {item.lote}</span>}
                       {item.validade && <span>· Val. {formatDate(item.validade)}</span>}
                     </div>
                   </div>
