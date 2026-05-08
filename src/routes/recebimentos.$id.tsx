@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
-import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
 import { VoiceConference } from "@/components/VoiceConference";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
 
 export const Route = createFileRoute("/recebimentos/$id")({
@@ -33,8 +35,14 @@ function ConferenciaPage() {
   const [scanInput, setScanInput] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<"todos" | "pendentes" | "conferidos" | "divergencias">("todos");
+  const [historico, setHistorico] = useState<{ ean: string; descricao: string; qtd: number; at: number }[]>([]);
+  const [showHist, setShowHist] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  useWakeLock(true);
 
   const { data: receb } = useQuery({
     queryKey: ["recebimento", id],
@@ -84,6 +92,19 @@ function ConferenciaPage() {
     ).length;
     return { conferidos, divergencias, total: itens.length };
   }, [itens]);
+
+  const itensFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return itens.filter((i) => {
+      if (q && !(i.descricao.toLowerCase().includes(q) || i.ean.includes(q))) return false;
+      const qc = Number(i.qtd_conferida);
+      const qe = Number(i.qtd_esperada);
+      if (filtro === "pendentes") return qc < qe;
+      if (filtro === "conferidos") return qc >= qe && qc > 0;
+      if (filtro === "divergencias") return qc > 0 && qc !== qe;
+      return true;
+    });
+  }, [itens, busca, filtro]);
 
   const addQty = async (itemId: string, delta: number) => {
     const item = itens.find((i) => i.id === itemId);
@@ -207,6 +228,10 @@ function ConferenciaPage() {
       toast.success(found.descricao, { description: `+1 ${found.unidade}` });
     }
     setActiveId(found.id);
+    setHistorico((h) => [
+      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + 1, at: Date.now() },
+      ...h,
+    ].slice(0, 30));
     setTimeout(() => {
       document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
@@ -314,7 +339,15 @@ function ConferenciaPage() {
             />
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-primary-foreground shadow-glow active:scale-95"
+              title="Escanear com a câmera"
+              onClick={() => setScannerOpen(true)}
+            >
+              <QrCode className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary sm:grid"
               title="Conferência por voz"
               onClick={() => setVoiceOpen(true)}
             >
@@ -322,15 +355,38 @@ function ConferenciaPage() {
             </button>
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary"
+              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary sm:grid"
               title="IA Visual · detectar caixas"
               onClick={() => setCameraOpen(true)}
             >
               <Camera className="h-4 w-4" />
             </button>
           </div>
+          <div className="mt-2 flex items-center gap-2 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+            >
+              <Mic className="h-3.5 w-3.5" /> Voz
+            </button>
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+            >
+              <Camera className="h-3.5 w-3.5" /> IA Caixas
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowHist((v) => !v)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-xs font-medium active:scale-[0.98]"
+            >
+              <History className="h-3.5 w-3.5" /> Histórico
+            </button>
+          </div>
           <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Bipe · fale · ou use a câmera
+            Bipe · escaneie · fale · ou use a câmera
           </div>
           {scanError && (
             <div
@@ -344,9 +400,78 @@ function ConferenciaPage() {
           )}
         </form>
 
+        {/* Histórico */}
+        {showHist && (
+          <div className="mt-3 rounded-2xl border border-border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-semibold">Últimas leituras</span>
+              <span className="text-muted-foreground">{historico.length}</span>
+            </div>
+            {historico.length === 0 ? (
+              <div className="text-xs text-muted-foreground">Nenhuma leitura ainda.</div>
+            ) : (
+              <ul className="max-h-56 space-y-1.5 overflow-auto">
+                {historico.map((h, i) => (
+                  <li key={i} className="flex items-start justify-between gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="break-words font-medium leading-snug">{h.descricao}</div>
+                      <div className="font-mono text-[10px] text-muted-foreground">{h.ean}</div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="font-mono font-bold tabular-nums">+1 → {h.qtd}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(h.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Busca + filtro */}
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por descrição ou EAN…"
+              className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            {([
+              ["todos", "Todos"],
+              ["pendentes", "Pendentes"],
+              ["conferidos", "Conferidos"],
+              ["divergencias", "Divergências"],
+            ] as const).map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => setFiltro(k)}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
+                  filtro === k
+                    ? "bg-primary text-primary-foreground shadow-glow"
+                    : "border border-border bg-card text-muted-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Items */}
-        <div className="mt-4 space-y-2">
-          {itens.map((item) => {
+        <div className="mt-3 space-y-2">
+          {itensFiltrados.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+              Nenhum item para os filtros aplicados.
+            </div>
+          )}
+          {itensFiltrados.map((item) => {
             const isOk = item.qtd_conferida >= item.qtd_esperada && item.qtd_conferida > 0;
             const isDiv = item.qtd_conferida > 0 && item.qtd_conferida !== item.qtd_esperada;
             return (
@@ -432,6 +557,12 @@ function ConferenciaPage() {
           </button>
         </div>
       </div>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetect={(code) => void processScan(code)}
+      />
 
       <CameraDetector
         open={cameraOpen}
