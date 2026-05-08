@@ -326,7 +326,15 @@ function ConferenciaPage() {
             />
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-primary-foreground shadow-glow active:scale-95"
+              title="Escanear com a câmera"
+              onClick={() => setScannerOpen(true)}
+            >
+              <QrCode className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary sm:grid"
               title="Conferência por voz"
               onClick={() => setVoiceOpen(true)}
             >
@@ -334,15 +342,38 @@ function ConferenciaPage() {
             </button>
             <button
               type="button"
-              className="grid h-11 w-11 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary"
+              className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl border border-primary/40 bg-primary/10 text-primary sm:grid"
               title="IA Visual · detectar caixas"
               onClick={() => setCameraOpen(true)}
             >
               <Camera className="h-4 w-4" />
             </button>
           </div>
+          <div className="mt-2 flex items-center gap-2 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(true)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+            >
+              <Mic className="h-3.5 w-3.5" /> Voz
+            </button>
+            <button
+              type="button"
+              onClick={() => setCameraOpen(true)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+            >
+              <Camera className="h-3.5 w-3.5" /> IA Caixas
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowHist((v) => !v)}
+              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-xs font-medium active:scale-[0.98]"
+            >
+              <History className="h-3.5 w-3.5" /> Histórico
+            </button>
+          </div>
           <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Bipe · fale · ou use a câmera
+            Bipe · escaneie · fale · ou use a câmera
           </div>
           {scanError && (
             <div
