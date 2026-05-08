@@ -93,6 +93,19 @@ function ConferenciaPage() {
     return { conferidos, divergencias, total: itens.length };
   }, [itens]);
 
+  const itensFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return itens.filter((i) => {
+      if (q && !(i.descricao.toLowerCase().includes(q) || i.ean.includes(q))) return false;
+      const qc = Number(i.qtd_conferida);
+      const qe = Number(i.qtd_esperada);
+      if (filtro === "pendentes") return qc < qe;
+      if (filtro === "conferidos") return qc >= qe && qc > 0;
+      if (filtro === "divergencias") return qc > 0 && qc !== qe;
+      return true;
+    });
+  }, [itens, busca, filtro]);
+
   const addQty = async (itemId: string, delta: number) => {
     const item = itens.find((i) => i.id === itemId);
     if (!item) return;
