@@ -332,6 +332,16 @@ function ConferenciaPage() {
           <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Bipe · fale · ou use a câmera
           </div>
+          {scanError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-2 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="break-words">{scanError}</span>
+            </div>
+          )}
         </form>
 
         {/* Items */}
