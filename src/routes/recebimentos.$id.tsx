@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
 import { VoiceConference } from "@/components/VoiceConference";
+import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
 
 export const Route = createFileRoute("/recebimentos/$id")({
   component: ConferenciaPage,
@@ -114,29 +115,7 @@ function ConferenciaPage() {
   const updateQuantity = (item: Item, delta: number) => addQty(item.id, delta);
 
   const playCompleteSound = () => {
-    try {
-      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const ctx = new AC();
-      const beep = (freq: number, start: number, dur: number, gain = 0.9) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = "square";
-        osc.frequency.value = freq;
-        g.gain.setValueAtTime(0, ctx.currentTime + start);
-        g.gain.linearRampToValueAtTime(gain, ctx.currentTime + start + 0.01);
-        g.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
-        osc.connect(g).connect(ctx.destination);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + dur + 0.05);
-      };
-      beep(880, 0, 0.18);
-      beep(1320, 0.22, 0.18);
-      beep(1760, 0.44, 0.4, 1.0);
-      setTimeout(() => ctx.close(), 1300);
-    } catch {
-      /* noop */
-    }
-    if ("vibrate" in navigator) navigator.vibrate([120, 60, 120, 60, 240]);
+    playCompleteFanfare();
   };
 
   const [finalizando, setFinalizando] = useState(false);
@@ -199,26 +178,64 @@ function ConferenciaPage() {
     if ("vibrate" in navigator) navigator.vibrate(30);
   };
 
+  const [scanError, setScanError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showError = (msg: string) => {
+    setScanError(msg);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setScanError(null), 3500);
+  };
+
+  const processScan = async (code: string) => {
+    const found = itens.find((i) => i.ean === code);
+    if (!found) {
+      playErrorBeep();
+      showError(`EAN ${code} não está no romaneio`);
+      toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
+      return;
+    }
+    if (Number(found.qtd_conferida) >= Number(found.qtd_esperada)) {
+      playErrorBeep();
+      showError(`${found.descricao} já está completo (${Number(found.qtd_esperada)}/${Number(found.qtd_esperada)})`);
+      toast.warning("Quantidade já atingida", { description: found.descricao });
+      // ainda registra como sobra
+      await updateQuantity(found, 1);
+    } else {
+      await updateQuantity(found, 1);
+      playSuccessBeep();
+      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
+    }
+    setActiveId(found.id);
+    setTimeout(() => {
+      document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = scanInput.trim();
     if (!code) return;
-    const found = itens.find((i) => i.ean === code);
-    if (!found) {
-      toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
-      if ("vibrate" in navigator) navigator.vibrate([40, 40, 40]);
-    } else {
-      await updateQuantity(found, 1);
-      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
-      setActiveId(found.id);
-      // scroll into view
-      setTimeout(() => {
-        document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
-    }
     setScanInput("");
+    await processScan(code);
     inputRef.current?.focus();
   };
+
+  // Auto-submit quando o scanner envia o código sem Enter (detecta pausa rápida + tamanho típico de EAN)
+  useEffect(() => {
+    const code = scanInput.trim();
+    if (code.length < 8) return;
+    const t = setTimeout(() => {
+      if (scanInput.trim() === code) {
+        setScanInput("");
+        void processScan(code);
+        inputRef.current?.focus();
+      }
+    }, 180);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanInput]);
+
 
   if (!receb) {
     return (
@@ -243,14 +260,14 @@ function ConferenciaPage() {
         {/* Header card */}
         <div className="mt-3 rounded-2xl border border-border bg-gradient-surface p-5 shadow-elevated">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="font-mono text-[11px] text-muted-foreground">
                 NF #{receb.numero_nf}
               </div>
-              <h1 className="mt-0.5 text-xl font-bold tracking-tight md:text-2xl">
+              <h1 className="mt-0.5 break-words text-lg font-bold leading-tight tracking-tight sm:text-xl md:text-2xl">
                 {receb.fornecedor}
               </h1>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <div className="mt-1 break-words text-xs text-muted-foreground">
                 {receb.loja} · {receb.cnpj ?? "—"}
               </div>
             </div>
@@ -315,6 +332,16 @@ function ConferenciaPage() {
           <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             Bipe · fale · ou use a câmera
           </div>
+          {scanError && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="mt-2 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="break-words">{scanError}</span>
+            </div>
+          )}
         </form>
 
         {/* Items */}
@@ -345,11 +372,11 @@ function ConferenciaPage() {
                         {item.ean}
                       </span>
                     </div>
-                    <div className="mt-0.5 truncate text-sm font-semibold">
+                    <div className="mt-0.5 break-words text-sm font-semibold leading-snug">
                       {item.descricao}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      {item.lote && <span>Lote {item.lote}</span>}
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                      {item.lote && <span className="break-all">Lote {item.lote}</span>}
                       {item.validade && <span>· Val. {formatDate(item.validade)}</span>}
                     </div>
                   </div>
@@ -390,16 +417,18 @@ function ConferenciaPage() {
           <button
             onClick={finalizarNota}
             disabled={finalizando || receb.status === "conferido"}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-5 py-4 text-base font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60 sm:text-base"
           >
-            <CheckCircle2 className="h-5 w-5" />
-            {receb.status === "conferido"
-              ? "Nota já conferida"
-              : finalizando
-              ? "Finalizando…"
-              : totals.conferidos === totals.total
-              ? "Nota conferida"
-              : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span className="break-words text-center leading-tight">
+              {receb.status === "conferido"
+                ? "Nota já conferida"
+                : finalizando
+                ? "Finalizando…"
+                : totals.conferidos === totals.total
+                ? "Nota conferida"
+                : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+            </span>
           </button>
         </div>
       </div>
