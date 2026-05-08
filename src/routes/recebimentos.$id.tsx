@@ -558,6 +558,12 @@ function ConferenciaPage() {
         </div>
       </div>
 
+      <BarcodeScanner
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetect={(code) => void processScan(code)}
+      />
+
       <CameraDetector
         open={cameraOpen}
         onClose={() => setCameraOpen(false)}
