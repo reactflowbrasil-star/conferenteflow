@@ -417,16 +417,18 @@ function ConferenciaPage() {
           <button
             onClick={finalizarNota}
             disabled={finalizando || receb.status === "conferido"}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-5 py-4 text-base font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60 sm:text-base"
           >
-            <CheckCircle2 className="h-5 w-5" />
-            {receb.status === "conferido"
-              ? "Nota já conferida"
-              : finalizando
-              ? "Finalizando…"
-              : totals.conferidos === totals.total
-              ? "Nota conferida"
-              : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span className="break-words text-center leading-tight">
+              {receb.status === "conferido"
+                ? "Nota já conferida"
+                : finalizando
+                ? "Finalizando…"
+                : totals.conferidos === totals.total
+                ? "Nota conferida"
+                : `Conferir todos e finalizar (${totals.total - totals.conferidos} restantes)`}
+            </span>
           </button>
         </div>
       </div>
