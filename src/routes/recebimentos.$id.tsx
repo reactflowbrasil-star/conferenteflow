@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
 import { VoiceConference } from "@/components/VoiceConference";
+import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
 
 export const Route = createFileRoute("/recebimentos/$id")({
   component: ConferenciaPage,
