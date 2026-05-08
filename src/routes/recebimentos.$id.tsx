@@ -215,6 +215,10 @@ function ConferenciaPage() {
       toast.success(found.descricao, { description: `+1 ${found.unidade}` });
     }
     setActiveId(found.id);
+    setHistorico((h) => [
+      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + 1, at: Date.now() },
+      ...h,
+    ].slice(0, 30));
     setTimeout(() => {
       document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
