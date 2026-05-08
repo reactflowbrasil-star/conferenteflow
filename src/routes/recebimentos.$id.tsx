@@ -178,26 +178,64 @@ function ConferenciaPage() {
     if ("vibrate" in navigator) navigator.vibrate(30);
   };
 
+  const [scanError, setScanError] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showError = (msg: string) => {
+    setScanError(msg);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => setScanError(null), 3500);
+  };
+
+  const processScan = async (code: string) => {
+    const found = itens.find((i) => i.ean === code);
+    if (!found) {
+      playErrorBeep();
+      showError(`EAN ${code} não está no romaneio`);
+      toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
+      return;
+    }
+    if (Number(found.qtd_conferida) >= Number(found.qtd_esperada)) {
+      playErrorBeep();
+      showError(`${found.descricao} já está completo (${Number(found.qtd_esperada)}/${Number(found.qtd_esperada)})`);
+      toast.warning("Quantidade já atingida", { description: found.descricao });
+      // ainda registra como sobra
+      await updateQuantity(found, 1);
+    } else {
+      await updateQuantity(found, 1);
+      playSuccessBeep();
+      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
+    }
+    setActiveId(found.id);
+    setTimeout(() => {
+      document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = scanInput.trim();
     if (!code) return;
-    const found = itens.find((i) => i.ean === code);
-    if (!found) {
-      toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
-      if ("vibrate" in navigator) navigator.vibrate([40, 40, 40]);
-    } else {
-      await updateQuantity(found, 1);
-      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
-      setActiveId(found.id);
-      // scroll into view
-      setTimeout(() => {
-        document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
-    }
     setScanInput("");
+    await processScan(code);
     inputRef.current?.focus();
   };
+
+  // Auto-submit quando o scanner envia o código sem Enter (detecta pausa rápida + tamanho típico de EAN)
+  useEffect(() => {
+    const code = scanInput.trim();
+    if (code.length < 8) return;
+    const t = setTimeout(() => {
+      if (scanInput.trim() === code) {
+        setScanInput("");
+        void processScan(code);
+        inputRef.current?.focus();
+      }
+    }, 180);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanInput]);
+
 
   if (!receb) {
     return (
