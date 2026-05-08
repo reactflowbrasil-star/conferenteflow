@@ -35,8 +35,14 @@ function ConferenciaPage() {
   const [scanInput, setScanInput] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<"todos" | "pendentes" | "conferidos" | "divergencias">("todos");
+  const [historico, setHistorico] = useState<{ ean: string; descricao: string; qtd: number; at: number }[]>([]);
+  const [showHist, setShowHist] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  useWakeLock(true);
 
   const { data: receb } = useQuery({
     queryKey: ["recebimento", id],
