@@ -260,14 +260,14 @@ function ConferenciaPage() {
         {/* Header card */}
         <div className="mt-3 rounded-2xl border border-border bg-gradient-surface p-5 shadow-elevated">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="font-mono text-[11px] text-muted-foreground">
                 NF #{receb.numero_nf}
               </div>
-              <h1 className="mt-0.5 text-xl font-bold tracking-tight md:text-2xl">
+              <h1 className="mt-0.5 break-words text-lg font-bold leading-tight tracking-tight sm:text-xl md:text-2xl">
                 {receb.fornecedor}
               </h1>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <div className="mt-1 break-words text-xs text-muted-foreground">
                 {receb.loja} · {receb.cnpj ?? "—"}
               </div>
             </div>
