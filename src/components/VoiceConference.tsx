@@ -19,6 +19,7 @@ type Props = {
   activeId: string | null;
   onSelect: (itemId: string) => void;
   onAddQty: (itemId: string, delta: number) => void | Promise<void>;
+  onSetQty?: (itemId: string, qtd: number) => void | Promise<void>;
   onFinalizar?: () => void | Promise<void>;
 };
 
