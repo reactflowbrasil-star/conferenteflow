@@ -620,6 +620,7 @@ function ConferenciaPage() {
         activeId={activeId}
         onSelect={(itemId) => setActiveId(itemId)}
         onAddQty={addQty}
+        onSetQty={setQty}
         onFinalizar={async () => {
           await finalizarNota();
           setVoiceOpen(false);
