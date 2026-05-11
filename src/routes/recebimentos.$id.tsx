@@ -130,6 +130,7 @@ function ConferenciaPage() {
         : "divergencia";
 
     setActiveId(item.id);
+    flashItem(item.id);
     const { error } = await supabase
       .from("recebimento_itens")
       .update({ qtd_conferida: novaQtd, status: novoStatus })
@@ -141,6 +142,12 @@ function ConferenciaPage() {
     }
     if ("vibrate" in navigator) navigator.vibrate(delta > 0 ? 25 : 15);
     qc.invalidateQueries({ queryKey: ["itens", id] });
+  };
+
+  const setQty = async (itemId: string, qtd: number) => {
+    const item = itens.find((i) => i.id === itemId);
+    if (!item) return;
+    await addQty(itemId, qtd - Number(item.qtd_conferida));
   };
 
   const updateQuantity = (item: Item, delta: number) => addQty(item.id, delta);
