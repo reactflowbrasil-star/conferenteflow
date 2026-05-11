@@ -587,6 +587,19 @@ function ConferenciaPage() {
         </div>
       </div>
 
+      {/* Microfone flutuante (FAB) — sempre acessível */}
+      {!voiceOpen && (
+        <button
+          type="button"
+          onClick={() => setVoiceOpen(true)}
+          aria-label="Abrir conferência por voz"
+          className="fixed bottom-24 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow active:scale-95 sm:bottom-6"
+        >
+          <span className="absolute inset-0 rounded-full bg-primary/30 animate-mic-ping" aria-hidden />
+          <Mic className="relative h-6 w-6" />
+        </button>
+      )}
+
       <BarcodeScanner
         open={scannerOpen}
         onClose={() => setScannerOpen(false)}
