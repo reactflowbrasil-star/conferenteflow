@@ -77,16 +77,18 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
     const n = normalize(text);
 
     // close
-    if (/(fechar|sair|encerrar)\s*(microfone|voz)?/.test(n)) {
+    if (/^(fechar|sair|encerrar|cancelar|pausar)\s*(microfone|voz|escuta)?$/.test(n)) {
       push("Fechando voz", "out");
       onClose();
       return;
     }
     // finalizar nota / conferir todos
-    if (/(finalizar|encerrar|fechar)\s+(nota|conferencia|conferência)/.test(n) ||
-        /^(conferir|conferi)\s+(todos|tudo)/.test(n) ||
-        /^(nota\s+)?conferida/.test(n) ||
-        /^finalizar$/.test(n)) {
+    if (
+      /(finalizar|encerrar|fechar|concluir|terminar)\s+(a\s+)?(nota|conferencia|conferência|romaneio|tudo|todos)/.test(n) ||
+      /^(conferir|conferi|marca|marcar)\s+(todos|tudo)(\s+os\s+itens)?$/.test(n) ||
+      /^(nota\s+)?conferida$/.test(n) ||
+      /^(finalizar|concluir|terminar|pronto|ok\s+tudo|tudo\s+ok|tudo\s+certo)$/.test(n)
+    ) {
       if (onFinalizar) {
         push("✓ Finalizando nota…", "out");
         await onFinalizar();
@@ -96,7 +98,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       return;
     }
     // navigation
-    if (/^(proximo|próximo|avancar|avançar|seguinte)/.test(n)) {
+    if (/\b(proximo|próximo|avancar|avançar|seguinte|prossegue|continua)\b/.test(n)) {
       const list = itensRef.current;
       const idx = list.findIndex((i) => i.id === activeRef.current);
       const next = list[Math.min(list.length - 1, (idx < 0 ? -1 : idx) + 1)];
@@ -106,7 +108,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       }
       return;
     }
-    if (/^(anterior|voltar)/.test(n)) {
+    if (/\b(anterior|voltar|volta)\b/.test(n)) {
       const list = itensRef.current;
       const idx = list.findIndex((i) => i.id === activeRef.current);
       const prev = list[Math.max(0, (idx < 0 ? 1 : idx) - 1)];
@@ -116,8 +118,8 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       }
       return;
     }
-    // search / select
-    const search = n.match(/^(?:buscar|procurar|item|achar|selecionar)\s+(.+)/);
+    // search / select  ("buscar arroz", "selecionar leite", "ir para feijão")
+    const search = n.match(/^(?:buscar|busca|procurar|procura|item|achar|acha|selecionar|seleciona|ir\s+(?:para|pro|pra)|abrir|abre)\s+(.+)/);
     if (search) {
       const found = findByName(search[1]);
       if (found) {
@@ -128,8 +130,8 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       }
       return;
     }
-    // ok / finalizar item (completa quantidade esperada)
-    if (/^(ok|certo|completo|finalizar)/.test(n)) {
+    // ok / completar item
+    if (/^(ok|certo|completo|completar|completa|finaliza\s+item|fechou|feito|pronto)$/.test(n)) {
       const list = itensRef.current;
       const item = list.find((i) => i.id === activeRef.current);
       if (!item) return push("Nenhum item ativo", "err");
@@ -139,44 +141,84 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       push(`✓ +${delta} ${item.unidade}`);
       return;
     }
-    // subtract
-    const sub = n.match(/^(?:menos|tirar|remover)\s+(.+)/);
-    if (sub) {
+    // zerar / limpar
+    if (/^(zerar|zera|limpar|limpa|resetar|reset)(\s+item|\s+quantidade)?$/.test(n)) {
       const list = itensRef.current;
       const item = list.find((i) => i.id === activeRef.current);
       if (!item) return push("Nenhum item ativo", "err");
+      if (onSetQty) await onSetQty(item.id, 0);
+      else await onAddQty(item.id, -Number(item.qtd_conferida));
+      push(`= 0 ${item.unidade}`);
+      return;
+    }
+
+    // Helper: aplica número e (opcional) nome do produto na frase
+    const applyNumWithOptionalName = async (
+      num: number,
+      sign: 1 | -1,
+      absolute: boolean,
+      rest: string,
+    ) => {
+      const list = itensRef.current;
+      // tenta achar produto na frase (após remover "de", "do", "da", "caixas", etc.)
+      const cleaned = rest
+        .replace(/\b(de|do|da|dos|das|caixas?|unidades?|pacotes?|pe[cç]as?|itens?|item|para|pro|pra|no|na)\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      let target = list.find((i) => i.id === activeRef.current) ?? null;
+      if (cleaned) {
+        const found = findByName(cleaned);
+        if (found) target = found;
+      }
+      if (!target) return push("Diga 'buscar <produto>' antes da quantidade.", "err");
+      onSelect(target.id);
+      if (absolute) {
+        if (onSetQty) await onSetQty(target.id, num);
+        else await onAddQty(target.id, num - Number(target.qtd_conferida));
+        push(`= ${num} ${target.unidade} · ${target.descricao}`);
+      } else {
+        await onAddQty(target.id, sign * num);
+        push(`${sign > 0 ? "+" : "−"} ${num} ${target.unidade} · ${target.descricao}`);
+      }
+    };
+
+    // subtract: "menos 2", "tirar 3 do arroz", "remover 5"
+    const sub = n.match(/^(?:menos|tirar|tira|remover|remove|subtrair|diminuir|diminui)\s+(.+)/);
+    if (sub) {
       const num = parsePtNumber(sub[1]);
       if (num === null) return push("Quantidade não reconhecida", "err");
-      await onAddQty(item.id, -num);
-      push(`− ${num} ${item.unidade}`);
+      const rest = sub[1].replace(/\b\d+\b|\b\w+\b/, (m) => (parsePtNumber(m) !== null ? "" : m));
+      await applyNumWithOptionalName(num, -1, false, rest);
       return;
     }
-    // set absolute quantity ("quantidade 20" / "definir 12" / "total 5")
-    const setAbs = n.match(/^(?:quantidade|qtd|definir|total|igual\s+a)\s+(.+)/);
+    // set absolute: "quantidade 20", "definir 12", "total 5", "igual a 8"
+    const setAbs = n.match(/^(?:quantidade|qtd|definir|define|total|igual\s+a|ajustar\s+para|ajusta\s+para)\s+(.+)/);
     if (setAbs) {
-      const list = itensRef.current;
-      const item = list.find((i) => i.id === activeRef.current);
-      if (!item) return push("Nenhum item ativo", "err");
       const num = parsePtNumber(setAbs[1]);
       if (num === null) return push("Quantidade não reconhecida", "err");
-      if (onSetQty) await onSetQty(item.id, num);
-      else await onAddQty(item.id, num - Number(item.qtd_conferida));
-      push(`= ${num} ${item.unidade}`);
+      const rest = setAbs[1].replace(/\b\d+\b|\b\w+\b/, (m) => (parsePtNumber(m) !== null ? "" : m));
+      await applyNumWithOptionalName(num, 1, true, rest);
       return;
     }
-    // add explicit
-    const add = n.match(/^(?:mais|adicionar|somar|conferir|adiciona|soma)\s+(.+)/);
+    // add explicit: "mais 5", "adicionar 10 de arroz", "conferir 12 leite", "somar 3"
+    const add = n.match(/^(?:mais|adicionar|adiciona|somar|soma|conferir|conferi|bipar|bipa|incluir|inclui|colocar|coloca|p[oõ]e|botar|bota)\s+(.+)/);
     if (add) {
-      const list = itensRef.current;
-      const item = list.find((i) => i.id === activeRef.current);
-      if (!item) return push("Nenhum item ativo", "err");
       const num = parsePtNumber(add[1]);
       if (num === null) return push("Quantidade não reconhecida", "err");
-      await onAddQty(item.id, num);
-      push(`+ ${num} ${item.unidade}`);
+      const rest = add[1].replace(/\b\d+\b|\b\w+\b/, (m) => (parsePtNumber(m) !== null ? "" : m));
+      await applyNumWithOptionalName(num, 1, false, rest);
       return;
     }
-    // bare number => add
+    // pattern "<produto> <numero>"  ou "<numero> de <produto>"
+    const numFirst = n.match(/^(.+?)\s+(?:de|do|da)\s+(.+)$/);
+    if (numFirst) {
+      const left = parsePtNumber(numFirst[1]);
+      if (left !== null) {
+        await applyNumWithOptionalName(left, 1, false, numFirst[2]);
+        return;
+      }
+    }
+    // bare number => add no item ativo
     const num = parsePtNumber(n);
     if (num !== null) {
       const list = itensRef.current;
@@ -186,7 +228,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       push(`+ ${num} ${item.unidade}`);
       return;
     }
-    push("Não entendi. Tente: 'buscar arroz', 'doze', 'menos 2', 'próximo', 'ok'.", "err");
+    push("Não entendi. Tente: 'buscar arroz', '12 de arroz', 'menos 2', 'próximo', 'ok'.", "err");
   };
 
   const { supported, listening, error, start, stop } = useVoiceCommands({
