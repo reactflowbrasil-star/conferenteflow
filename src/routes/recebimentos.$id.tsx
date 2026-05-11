@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
-import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter } from "lucide-react";
+import { ArrowLeft, ScanLine, Check, AlertTriangle, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter, Zap, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
 import { VoiceConference } from "@/components/VoiceConference";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { QtyControls } from "@/components/QtyControls";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
 
@@ -41,8 +42,17 @@ function ConferenciaPage() {
   const [filtro, setFiltro] = useState<"todos" | "pendentes" | "conferidos" | "divergencias">("todos");
   const [historico, setHistorico] = useState<{ ean: string; descricao: string; qtd: number; at: number }[]>([]);
   const [showHist, setShowHist] = useState(false);
+  const [qtyMultiplier, setQtyMultiplier] = useState<number>(1);
+  const [lastChangedId, setLastChangedId] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useWakeLock(true);
+
+  const flashItem = (itemId: string) => {
+    setLastChangedId(itemId);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setLastChangedId(null), 700);
+  };
 
   const { data: receb } = useQuery({
     queryKey: ["recebimento", id],
@@ -120,6 +130,7 @@ function ConferenciaPage() {
         : "divergencia";
 
     setActiveId(item.id);
+    flashItem(item.id);
     const { error } = await supabase
       .from("recebimento_itens")
       .update({ qtd_conferida: novaQtd, status: novoStatus })
@@ -131,6 +142,12 @@ function ConferenciaPage() {
     }
     if ("vibrate" in navigator) navigator.vibrate(delta > 0 ? 25 : 15);
     qc.invalidateQueries({ queryKey: ["itens", id] });
+  };
+
+  const setQty = async (itemId: string, qtd: number) => {
+    const item = itens.find((i) => i.id === itemId);
+    if (!item) return;
+    await addQty(itemId, qtd - Number(item.qtd_conferida));
   };
 
   const updateQuantity = (item: Item, delta: number) => addQty(item.id, delta);
@@ -216,22 +233,24 @@ function ConferenciaPage() {
       toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
       return;
     }
+    const inc = qtyMultiplier > 0 ? qtyMultiplier : 1;
     if (Number(found.qtd_conferida) >= Number(found.qtd_esperada)) {
       playErrorBeep();
       showError(`${found.descricao} já está completo (${Number(found.qtd_esperada)}/${Number(found.qtd_esperada)})`);
       toast.warning("Quantidade já atingida", { description: found.descricao });
-      // ainda registra como sobra
-      await updateQuantity(found, 1);
+      await updateQuantity(found, inc);
     } else {
-      await updateQuantity(found, 1);
+      await updateQuantity(found, inc);
       playSuccessBeep();
-      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
+      toast.success(found.descricao, { description: `+${inc} ${found.unidade}` });
     }
     setActiveId(found.id);
     setHistorico((h) => [
-      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + 1, at: Date.now() },
+      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + inc, at: Date.now() },
       ...h,
     ].slice(0, 30));
+    // reset multiplier após uso
+    if (qtyMultiplier !== 1) setQtyMultiplier(1);
     setTimeout(() => {
       document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
@@ -385,8 +404,35 @@ function ConferenciaPage() {
               <History className="h-3.5 w-3.5" /> Histórico
             </button>
           </div>
-          <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Bipe · escaneie · fale · ou use a câmera
+          {/* Multiplicador inteligente: próxima bipagem soma N */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Zap className="h-3 w-3" /> Próx. bip
+            </span>
+            {[1, 2, 5, 10, 12, 24].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setQtyMultiplier(n)}
+                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold transition active:scale-95 ${
+                  qtyMultiplier === n
+                    ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                    : "border border-border bg-background text-muted-foreground"
+                }`}
+              >
+                ×{n}
+              </button>
+            ))}
+            {qtyMultiplier !== 1 && (
+              <button
+                type="button"
+                onClick={() => setQtyMultiplier(1)}
+                className="ml-auto inline-flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                title="Resetar"
+              >
+                <X className="h-3 w-3" /> reset
+              </button>
+            )}
           </div>
           {scanError && (
             <div
@@ -506,31 +552,14 @@ function ConferenciaPage() {
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      onClick={() => updateQuantity(item, -1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-background text-muted-foreground active:scale-95"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <div className="min-w-[64px] text-center">
-                      <div className="font-mono text-lg font-bold leading-none tabular-nums">
-                        {Number(item.qtd_conferida)}
-                        <span className="text-muted-foreground">
-                          /{Number(item.qtd_esperada)}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-                        {item.unidade}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => updateQuantity(item, 1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary text-primary-foreground shadow-glow active:scale-95"
-                    >
-                      <Plus className="h-4 w-4" strokeWidth={3} />
-                    </button>
-                  </div>
+                  <QtyControls
+                    qtdConferida={Number(item.qtd_conferida)}
+                    qtdEsperada={Number(item.qtd_esperada)}
+                    unidade={item.unidade}
+                    highlight={lastChangedId === item.id}
+                    onDelta={(d) => updateQuantity(item, d)}
+                    onSet={(q) => setQty(item.id, q)}
+                  />
                 </div>
               </div>
             );
@@ -558,6 +587,19 @@ function ConferenciaPage() {
         </div>
       </div>
 
+      {/* Microfone flutuante (FAB) — sempre acessível */}
+      {!voiceOpen && (
+        <button
+          type="button"
+          onClick={() => setVoiceOpen(true)}
+          aria-label="Abrir conferência por voz"
+          className="fixed bottom-24 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow active:scale-95 sm:bottom-6"
+        >
+          <span className="absolute inset-0 rounded-full bg-primary/30 animate-mic-ping" aria-hidden />
+          <Mic className="relative h-6 w-6" />
+        </button>
+      )}
+
       <BarcodeScanner
         open={scannerOpen}
         onClose={() => setScannerOpen(false)}
@@ -578,6 +620,7 @@ function ConferenciaPage() {
         activeId={activeId}
         onSelect={(itemId) => setActiveId(itemId)}
         onAddQty={addQty}
+        onSetQty={setQty}
         onFinalizar={async () => {
           await finalizarNota();
           setVoiceOpen(false);
