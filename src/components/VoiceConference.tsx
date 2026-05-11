@@ -282,7 +282,7 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
           </div>
           {activeItem ? (
             <div className="mt-1">
-              <div className="truncate text-sm font-semibold">{activeItem.descricao}</div>
+              <div className="break-words text-sm font-semibold leading-snug">{activeItem.descricao}</div>
               <div className="mt-0.5 font-mono text-xs text-muted-foreground tabular-nums">
                 {Number(activeItem.qtd_conferida)}/{Number(activeItem.qtd_esperada)} {activeItem.unidade}
               </div>
