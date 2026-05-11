@@ -42,8 +42,17 @@ function ConferenciaPage() {
   const [filtro, setFiltro] = useState<"todos" | "pendentes" | "conferidos" | "divergencias">("todos");
   const [historico, setHistorico] = useState<{ ean: string; descricao: string; qtd: number; at: number }[]>([]);
   const [showHist, setShowHist] = useState(false);
+  const [qtyMultiplier, setQtyMultiplier] = useState<number>(1);
+  const [lastChangedId, setLastChangedId] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useWakeLock(true);
+
+  const flashItem = (itemId: string) => {
+    setLastChangedId(itemId);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setLastChangedId(null), 700);
+  };
 
   const { data: receb } = useQuery({
     queryKey: ["recebimento", id],
