@@ -404,8 +404,35 @@ function ConferenciaPage() {
               <History className="h-3.5 w-3.5" /> Histórico
             </button>
           </div>
-          <div className="mt-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Bipe · escaneie · fale · ou use a câmera
+          {/* Multiplicador inteligente: próxima bipagem soma N */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Zap className="h-3 w-3" /> Próx. bip
+            </span>
+            {[1, 2, 5, 10, 12, 24].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setQtyMultiplier(n)}
+                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold transition active:scale-95 ${
+                  qtyMultiplier === n
+                    ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                    : "border border-border bg-background text-muted-foreground"
+                }`}
+              >
+                ×{n}
+              </button>
+            ))}
+            {qtyMultiplier !== 1 && (
+              <button
+                type="button"
+                onClick={() => setQtyMultiplier(1)}
+                className="ml-auto inline-flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                title="Resetar"
+              >
+                <X className="h-3 w-3" /> reset
+              </button>
+            )}
           </div>
           {scanError && (
             <div
