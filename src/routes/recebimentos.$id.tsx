@@ -525,31 +525,14 @@ function ConferenciaPage() {
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      onClick={() => updateQuantity(item, -1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-background text-muted-foreground active:scale-95"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <div className="min-w-[64px] text-center">
-                      <div className="font-mono text-lg font-bold leading-none tabular-nums">
-                        {Number(item.qtd_conferida)}
-                        <span className="text-muted-foreground">
-                          /{Number(item.qtd_esperada)}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-                        {item.unidade}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => updateQuantity(item, 1)}
-                      className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary text-primary-foreground shadow-glow active:scale-95"
-                    >
-                      <Plus className="h-4 w-4" strokeWidth={3} />
-                    </button>
-                  </div>
+                  <QtyControls
+                    qtdConferida={Number(item.qtd_conferida)}
+                    qtdEsperada={Number(item.qtd_esperada)}
+                    unidade={item.unidade}
+                    highlight={lastChangedId === item.id}
+                    onDelta={(d) => updateQuantity(item, d)}
+                    onSet={(q) => setQty(item.id, q)}
+                  />
                 </div>
               </div>
             );
