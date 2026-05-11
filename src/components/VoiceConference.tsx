@@ -151,8 +151,21 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
       push(`− ${num} ${item.unidade}`);
       return;
     }
+    // set absolute quantity ("quantidade 20" / "definir 12" / "total 5")
+    const setAbs = n.match(/^(?:quantidade|qtd|definir|total|igual\s+a)\s+(.+)/);
+    if (setAbs) {
+      const list = itensRef.current;
+      const item = list.find((i) => i.id === activeRef.current);
+      if (!item) return push("Nenhum item ativo", "err");
+      const num = parsePtNumber(setAbs[1]);
+      if (num === null) return push("Quantidade não reconhecida", "err");
+      if (onSetQty) await onSetQty(item.id, num);
+      else await onAddQty(item.id, num - Number(item.qtd_conferida));
+      push(`= ${num} ${item.unidade}`);
+      return;
+    }
     // add explicit
-    const add = n.match(/^(?:mais|adicionar|somar|conferir)\s+(.+)/);
+    const add = n.match(/^(?:mais|adicionar|somar|conferir|adiciona|soma)\s+(.+)/);
     if (add) {
       const list = itensRef.current;
       const item = list.find((i) => i.id === activeRef.current);
