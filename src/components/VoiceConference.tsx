@@ -373,10 +373,10 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
 
 function Hint({ icon, label, desc }: { icon: React.ReactNode; label: string; desc: string }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-md border border-border bg-background/30 px-2 py-1">
-      <span>{icon}</span>
-      <span className="font-mono text-foreground">{label}</span>
-      <span className="ml-auto truncate">{desc}</span>
+    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-md border border-border bg-background/30 px-2 py-1">
+      <span className="shrink-0">{icon}</span>
+      <span className="break-words font-mono text-foreground">{label}</span>
+      <span className="ml-auto break-words text-right">{desc}</span>
     </div>
   );
 }
