@@ -365,20 +365,22 @@ export function VoiceConference({ open, onClose, itens, activeId, onSelect, onAd
               ) : (
                 <Check className="mt-0.5 h-3 w-3 shrink-0" />
               )}
-              <span className="font-mono">{l.text}</span>
+              <span className="break-words font-mono">{l.text}</span>
             </div>
           ))}
         </div>
 
         {/* Help */}
-        <div className="mt-4 grid grid-cols-2 gap-1.5 text-[11px] text-muted-foreground">
-          <Hint icon="🔢" label='"doze"' desc="+12 no item" />
-          <Hint icon="➖" label='"menos 2"' desc="Remove 2" />
+        <div className="mt-4 grid grid-cols-1 gap-1.5 text-[11px] text-muted-foreground sm:grid-cols-2">
+          <Hint icon="🔢" label='"doze"' desc="+12 no item ativo" />
+          <Hint icon="➕" label='"mais 5 de arroz"' desc="Soma direto no produto" />
+          <Hint icon="🎯" label='"quantidade 20"' desc="Define total exato" />
+          <Hint icon="➖" label='"menos 2"' desc="Remove do ativo" />
           <Hint icon="🔍" label='"buscar arroz"' desc="Seleciona item" />
           <Hint icon="✓" label='"ok"' desc="Completa esperado" />
-          <Hint icon={<ChevronDown className="inline h-3 w-3" />} label='"próximo"' desc="Avança" />
-          <Hint icon={<ChevronUp className="inline h-3 w-3" />} label='"anterior"' desc="Volta" />
-          <Hint icon="🏁" label='"conferir todos"' desc="Finaliza nota" />
+          <Hint icon="🧹" label='"zerar"' desc="Limpa quantidade" />
+          <Hint icon={<ChevronDown className="inline h-3 w-3" />} label='"próximo"' desc="Avança item" />
+          <Hint icon={<ChevronUp className="inline h-3 w-3" />} label='"anterior"' desc="Volta item" />
           <Hint icon="🏁" label='"finalizar nota"' desc="Encerra conferência" />
         </div>
 
