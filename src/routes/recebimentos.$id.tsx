@@ -233,22 +233,24 @@ function ConferenciaPage() {
       toast.error("Produto fora da NF", { description: `EAN ${code} não está no romaneio.` });
       return;
     }
+    const inc = qtyMultiplier > 0 ? qtyMultiplier : 1;
     if (Number(found.qtd_conferida) >= Number(found.qtd_esperada)) {
       playErrorBeep();
       showError(`${found.descricao} já está completo (${Number(found.qtd_esperada)}/${Number(found.qtd_esperada)})`);
       toast.warning("Quantidade já atingida", { description: found.descricao });
-      // ainda registra como sobra
-      await updateQuantity(found, 1);
+      await updateQuantity(found, inc);
     } else {
-      await updateQuantity(found, 1);
+      await updateQuantity(found, inc);
       playSuccessBeep();
-      toast.success(found.descricao, { description: `+1 ${found.unidade}` });
+      toast.success(found.descricao, { description: `+${inc} ${found.unidade}` });
     }
     setActiveId(found.id);
     setHistorico((h) => [
-      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + 1, at: Date.now() },
+      { ean: found.ean, descricao: found.descricao, qtd: Number(found.qtd_conferida) + inc, at: Date.now() },
       ...h,
     ].slice(0, 30));
+    // reset multiplier após uso
+    if (qtyMultiplier !== 1) setQtyMultiplier(1);
     setTimeout(() => {
       document.getElementById(`item-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 50);
