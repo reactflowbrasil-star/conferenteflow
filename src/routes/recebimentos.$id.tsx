@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/format";
-import { ArrowLeft, ScanLine, Check, AlertTriangle, Plus, Minus, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter } from "lucide-react";
+import { ArrowLeft, ScanLine, Check, AlertTriangle, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter, Zap, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CameraDetector } from "@/components/CameraDetector";
 import { VoiceConference } from "@/components/VoiceConference";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { QtyControls } from "@/components/QtyControls";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
 
