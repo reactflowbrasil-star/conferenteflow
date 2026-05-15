@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
+import { FaceIdCard } from "@/components/FaceIdCard";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -132,6 +133,8 @@ function AjustesPage() {
             />
           </div>
         </section>
+
+        <FaceIdCard />
 
         {isSupervisor ? (
           tab === "usuarios" ? (
