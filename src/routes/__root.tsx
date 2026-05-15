@@ -77,44 +77,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
-      },
-      { name: "theme-color", content: "#061126" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
+      { name: "theme-color", content: "#0b1220" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "ConferFlow" },
+      { name: "apple-mobile-web-app-title", content: "Super Padrão" },
       { name: "mobile-web-app-capable", content: "yes" },
-      { title: "ConferFlow" },
-      {
-        name: "description",
-        content:
-          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
-      },
-      { name: "author", content: "ConferFlow" },
-      { property: "og:title", content: "ConferFlow" },
-      {
-        property: "og:description",
-        content:
-          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
-      },
+      { title: "ConferFlow — Conferência Inteligente para Supermercados" },
+      { name: "description", content: "ConferFlow: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
+      { name: "author", content: "Super Padrão" },
+      { property: "og:title", content: "ConferFlow — Conferência Inteligente para Supermercados" },
+      { property: "og:description", content: "ConferFlow: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "ConferFlow" },
-      {
-        name: "twitter:description",
-        content:
-          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
-      },
-      {
-        property: "og:image",
-        content: "/brand/conferflow-wide-dark.png",
-      },
-      {
-        name: "twitter:image",
-        content: "/brand/conferflow-wide-dark.png",
-      },
+      { name: "twitter:title", content: "ConferFlow — Conferência Inteligente para Supermercados" },
+      { name: "twitter:description", content: "ConferFlow: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/HSCf1FVUzfeQ3XxSP6NR8IRo6TI2/social-images/social-1778870462294-ChatGPT_Image_15_de_mai._de_2026,_15_21_15.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/HSCf1FVUzfeQ3XxSP6NR8IRo6TI2/social-images/social-1778870462294-ChatGPT_Image_15_de_mai._de_2026,_15_21_15.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
