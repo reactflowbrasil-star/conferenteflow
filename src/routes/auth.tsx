@@ -5,7 +5,8 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
-import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, ScanFace } from "lucide-react";
+import { useFaceLogin, isFaceAuthSupported } from "@/hooks/useFaceAuth";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -22,6 +23,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { login: faceLogin, busy: faceBusy } = useFaceLogin();
+  const faceSupported = typeof window !== "undefined" && isFaceAuthSupported();
 
   useEffect(() => {
     if (!loading && session && pathname === "/auth") {
@@ -157,15 +160,34 @@ function AuthPage() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={submitting}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-semibold transition-colors hover:border-primary/40 disabled:opacity-50"
-          >
-            <GoogleIcon />
-            Continuar com Google
-          </button>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={submitting}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-sm font-semibold transition-colors hover:border-primary/40 disabled:opacity-50"
+            >
+              <GoogleIcon />
+              Continuar com Google
+            </button>
+
+            {mode === "signin" && faceSupported && (
+              <button
+                type="button"
+                onClick={() => faceLogin(email)}
+                disabled={faceBusy || !email}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                title={!email ? "Digite seu e-mail primeiro" : "Entrar com biometria"}
+              >
+                {faceBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanFace className="h-4 w-4" />
+                )}
+                Entrar com biometria
+              </button>
+            )}
+          </div>
 
           <button
             type="button"
