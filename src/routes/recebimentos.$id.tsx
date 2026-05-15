@@ -7,12 +7,20 @@ import { formatDate } from "@/lib/format";
 import { ArrowLeft, ScanLine, Check, AlertTriangle, Camera, Mic, CheckCircle2, QrCode, Search, History, Filter, Zap, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CameraDetector } from "@/components/CameraDetector";
-import { VoiceConference } from "@/components/VoiceConference";
-import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { lazy, Suspense } from "react";
 import { QtyControls } from "@/components/QtyControls";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { playSuccessBeep, playErrorBeep, playCompleteFanfare } from "@/lib/sounds";
+
+const BarcodeScanner = lazy(() =>
+  import("@/components/BarcodeScanner").then((m) => ({ default: m.BarcodeScanner })),
+);
+const CameraDetector = lazy(() =>
+  import("@/components/CameraDetector").then((m) => ({ default: m.CameraDetector })),
+);
+const VoiceConference = lazy(() =>
+  import("@/components/VoiceConference").then((m) => ({ default: m.VoiceConference })),
+);
 
 export const Route = createFileRoute("/recebimentos/$id")({
   component: ConferenciaPage,
@@ -54,7 +62,7 @@ function ConferenciaPage() {
     flashTimerRef.current = setTimeout(() => setLastChangedId(null), 700);
   };
 
-  const { data: receb } = useQuery({
+  const { data: receb, isLoading: recebLoading, isError: recebError } = useQuery({
     queryKey: ["recebimento", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -131,17 +139,28 @@ function ConferenciaPage() {
 
     setActiveId(item.id);
     flashItem(item.id);
+
+    // Optimistic update — atualiza UI imediatamente
+    const prev = qc.getQueryData<Item[]>(["itens", id]);
+    qc.setQueryData<Item[]>(["itens", id], (old) =>
+      (old ?? []).map((i) =>
+        i.id === item.id ? { ...i, qtd_conferida: novaQtd, status: novoStatus } : i,
+      ),
+    );
+
     const { error } = await supabase
       .from("recebimento_itens")
       .update({ qtd_conferida: novaQtd, status: novoStatus })
       .eq("id", item.id);
 
     if (error) {
+      // Rollback
+      if (prev) qc.setQueryData(["itens", id], prev);
       toast.error("Falha ao atualizar item");
       return;
     }
     if ("vibrate" in navigator) navigator.vibrate(delta > 0 ? 25 : 15);
-    qc.invalidateQueries({ queryKey: ["itens", id] });
+    // Realtime subscription cuidará da reconciliação se houver mudança externa.
   };
 
   const setQty = async (itemId: string, qtd: number) => {
@@ -177,7 +196,7 @@ function ConferenciaPage() {
       }
       qc.invalidateQueries({ queryKey: ["itens", id] });
     }
-    const novoStatus = totals.divergencias > 0 ? "divergencia" : "conferido";
+    const novoStatus = totals.divergencias > 0 ? "com_divergencia" : "finalizado";
     const { error } = await supabase
       .from("recebimentos")
       .update({ status: novoStatus, finalizado_at: new Date().toISOString() })
@@ -265,26 +284,57 @@ function ConferenciaPage() {
     inputRef.current?.focus();
   };
 
-  // Auto-submit quando o scanner envia o código sem Enter (detecta pausa rápida + tamanho típico de EAN)
+  // Auto-submit quando o scanner USB/Bluetooth envia o código sem Enter.
+  // Restringe a padrões numéricos típicos de EAN/UPC/ITF e usa debounce maior
+  // para não disparar com digitação manual.
   useEffect(() => {
     const code = scanInput.trim();
     if (code.length < 8) return;
+    if (!/^\d{8,14}$/.test(code)) return;
     const t = setTimeout(() => {
       if (scanInput.trim() === code) {
         setScanInput("");
         void processScan(code);
         inputRef.current?.focus();
       }
-    }, 180);
+    }, 280);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanInput]);
 
 
-  if (!receb) {
+  if (recebLoading) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-3xl px-4 py-10">Carregando…</div>
+        <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-8">
+          <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+          <div className="mt-3 h-40 animate-pulse rounded-2xl border border-border bg-card/50" />
+          <div className="mt-5 h-16 animate-pulse rounded-2xl border border-border bg-card/50" />
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-20 animate-pulse rounded-2xl border border-border bg-card/40" />
+            ))}
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+  if (recebError || !receb) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-3xl px-4 py-10 text-center">
+          <AlertTriangle className="mx-auto h-8 w-8 text-destructive" />
+          <h2 className="mt-3 text-lg font-semibold">Recebimento não encontrado</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pode ter sido removido ou você não tem acesso a esta loja.
+          </p>
+          <Link
+            to="/recebimentos"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-4 py-2 text-sm hover:border-primary/40"
+          >
+            <ArrowLeft className="h-4 w-4" /> Voltar aos recebimentos
+          </Link>
+        </div>
       </AppShell>
     );
   }
@@ -570,13 +620,13 @@ function ConferenciaPage() {
         <div className="sticky bottom-3 mt-6 z-10">
           <button
             onClick={finalizarNota}
-            disabled={finalizando || receb.status === "conferido"}
+            disabled={finalizando || receb.status === "finalizado" || receb.status === "com_divergencia"}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-primary px-4 py-4 text-sm font-bold text-primary-foreground shadow-glow active:scale-[0.99] disabled:opacity-60 sm:text-base"
           >
             <CheckCircle2 className="h-5 w-5 shrink-0" />
             <span className="break-words text-center leading-tight">
-              {receb.status === "conferido"
-                ? "Nota já conferida"
+              {receb.status === "finalizado" || receb.status === "com_divergencia"
+                ? "Nota já finalizada"
                 : finalizando
                 ? "Finalizando…"
                 : totals.conferidos === totals.total
@@ -600,32 +650,38 @@ function ConferenciaPage() {
         </button>
       )}
 
-      <BarcodeScanner
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onDetect={(code) => void processScan(code)}
-      />
-
-      <CameraDetector
-        open={cameraOpen}
-        onClose={() => setCameraOpen(false)}
-        itens={itens}
-        onApply={applyDetected}
-      />
-
-      <VoiceConference
-        open={voiceOpen}
-        onClose={() => setVoiceOpen(false)}
-        itens={itens}
-        activeId={activeId}
-        onSelect={(itemId) => setActiveId(itemId)}
-        onAddQty={addQty}
-        onSetQty={setQty}
-        onFinalizar={async () => {
-          await finalizarNota();
-          setVoiceOpen(false);
-        }}
-      />
+      <Suspense fallback={null}>
+        {scannerOpen && (
+          <BarcodeScanner
+            open={scannerOpen}
+            onClose={() => setScannerOpen(false)}
+            onDetect={(code) => void processScan(code)}
+          />
+        )}
+        {cameraOpen && (
+          <CameraDetector
+            open={cameraOpen}
+            onClose={() => setCameraOpen(false)}
+            itens={itens}
+            onApply={applyDetected}
+          />
+        )}
+        {voiceOpen && (
+          <VoiceConference
+            open={voiceOpen}
+            onClose={() => setVoiceOpen(false)}
+            itens={itens}
+            activeId={activeId}
+            onSelect={(itemId) => setActiveId(itemId)}
+            onAddQty={addQty}
+            onSetQty={setQty}
+            onFinalizar={async () => {
+              await finalizarNota();
+              setVoiceOpen(false);
+            }}
+          />
+        )}
+      </Suspense>
     </AppShell>
   );
 }

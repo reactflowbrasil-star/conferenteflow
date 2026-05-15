@@ -10,6 +10,13 @@ export type Profile = {
   email: string | null;
 };
 
+export type LojaRole = {
+  lojaId: string;
+  loja: string;
+  codigo: string;
+  role: AppRole;
+};
+
 type AuthContextValue = {
   loading: boolean;
   session: Session | null;
@@ -17,6 +24,7 @@ type AuthContextValue = {
   profile: Profile | null;
   roles: AppRole[];
   lojas: string[];
+  lojaRoles: LojaRole[];
   isAuditor: boolean;
   isSupervisor: boolean;
   isConferente: boolean;
@@ -33,23 +41,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [lojas, setLojas] = useState<string[]>([]);
+  const [lojaRoles, setLojaRoles] = useState<LojaRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadUserData = async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: lojaRows }] = await Promise.all([
-      supabase.from("profiles").select("id,nome,email").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("user_lojas").select("loja").eq("user_id", uid),
-    ]);
+    const [{ data: prof }, { data: roleRows }, { data: lojaRows }, { data: lojaRoleRows }] =
+      await Promise.all([
+        supabase.from("profiles").select("id,nome,email").eq("id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("user_lojas").select("loja").eq("user_id", uid),
+        supabase.from("user_loja_roles").select("role, lojas(id,nome,codigo)").eq("user_id", uid),
+      ]);
+    const structuredLojaRoles = (lojaRoleRows ?? [])
+      .map((r) => {
+        const loja = Array.isArray(r.lojas) ? r.lojas[0] : r.lojas;
+        if (!loja) return null;
+        return {
+          lojaId: loja.id as string,
+          loja: loja.nome as string,
+          codigo: loja.codigo as string,
+          role: r.role as AppRole,
+        };
+      })
+      .filter((r): r is LojaRole => Boolean(r));
+    const nextRoles = Array.from(
+      new Set([
+        ...(roleRows ?? []).map((r) => r.role as AppRole),
+        ...structuredLojaRoles.map((r) => r.role),
+      ]),
+    );
+    const nextLojas = Array.from(
+      new Set([
+        ...(lojaRows ?? []).map((r) => r.loja as string),
+        ...structuredLojaRoles.flatMap((r) => [r.loja, r.codigo]),
+      ]),
+    );
     setProfile((prof as Profile) ?? null);
-    setRoles((roleRows ?? []).map((r) => r.role as AppRole));
-    setLojas((lojaRows ?? []).map((r) => r.loja as string));
+    setRoles(nextRoles);
+    setLojas(nextLojas);
+    setLojaRoles(structuredLojaRoles);
   };
 
   const clearUserData = () => {
     setProfile(null);
     setRoles([]);
     setLojas([]);
+    setLojaRoles([]);
   };
 
   useEffect(() => {
@@ -86,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       roles,
       lojas,
+      lojaRoles,
       isAuditor,
       isSupervisor: roles.includes("supervisor"),
       isConferente: roles.includes("conferente"),
@@ -98,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     };
-  }, [loading, session, profile, roles, lojas]);
+  }, [loading, session, profile, roles, lojas, lojaRoles]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

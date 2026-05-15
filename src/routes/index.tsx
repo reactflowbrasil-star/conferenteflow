@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
-  const { data: recebimentos = [] } = useQuery({
+  const { data: recebimentos = [], isLoading } = useQuery({
     queryKey: ["recebimentos", "recent"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,10 +31,48 @@ function DashboardPage() {
     },
   });
 
-  const pendentes = recebimentos.filter((r) => r.status === "pendente").length;
-  const emConf = recebimentos.filter((r) => r.status === "em_conferencia").length;
-  const finalizados = recebimentos.filter((r) => r.status === "finalizado").length;
-  const divergencias = recebimentos.reduce((acc, r) => acc + (r.total_divergencias || 0), 0);
+  // KPIs contam o universo total, não só os 8 últimos
+  const { data: kpis } = useQuery({
+    queryKey: ["recebimentos", "kpis"],
+    queryFn: async () => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const [pend, conf, finHoje, divAgg] = await Promise.all([
+        supabase
+          .from("recebimentos")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pendente"),
+        supabase
+          .from("recebimentos")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "em_conferencia"),
+        supabase
+          .from("recebimentos")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["finalizado", "com_divergencia"])
+          .gte("finalizado_at", startOfDay.toISOString()),
+        supabase
+          .from("recebimentos")
+          .select("total_divergencias")
+          .gte("created_at", startOfDay.toISOString()),
+      ]);
+      const divergencias = (divAgg.data ?? []).reduce(
+        (acc, r) => acc + (Number(r.total_divergencias) || 0),
+        0,
+      );
+      return {
+        pendentes: pend.count ?? 0,
+        emConf: conf.count ?? 0,
+        finalizados: finHoje.count ?? 0,
+        divergencias,
+      };
+    },
+  });
+
+  const pendentes = kpis?.pendentes ?? 0;
+  const emConf = kpis?.emConf ?? 0;
+  const finalizados = kpis?.finalizados ?? 0;
+  const divergencias = kpis?.divergencias ?? 0;
 
   return (
     <AppShell>
@@ -133,6 +171,18 @@ function DashboardPage() {
           </div>
 
           <div className="space-y-2">
+            {isLoading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[78px] animate-pulse rounded-xl border border-border bg-card/50"
+                />
+              ))}
+            {!isLoading && recebimentos.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border bg-card/30 p-10 text-center text-sm text-muted-foreground">
+                Nenhum recebimento ainda.
+              </div>
+            )}
             {recebimentos.map((r) => (
               <Link
                 key={r.id}
