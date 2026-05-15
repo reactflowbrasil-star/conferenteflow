@@ -81,7 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
-      { name: "theme-color", content: "#0b1220" },
+      { name: "theme-color", content: "#061126" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "ConferFlow" },
@@ -109,13 +109,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png",
+        content: "/brand/conferflow-wide-dark.png",
       },
       {
         name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png",
+        content: "/brand/conferflow-wide-dark.png",
       },
     ],
     links: [

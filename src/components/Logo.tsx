@@ -1,21 +1,34 @@
-import { ScanLine } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function Logo({ compact = false }: { compact?: boolean }) {
+type LogoSurface = "dark" | "light";
+
+export function Logo({
+  compact = false,
+  surface = "dark",
+  className,
+}: {
+  compact?: boolean;
+  surface?: LogoSurface;
+  className?: string;
+}) {
+  const src = compact
+    ? surface === "light"
+      ? "/brand/conferflow-square-light.png"
+      : "/brand/conferflow-square-dark.png"
+    : surface === "light"
+      ? "/brand/conferflow-wide-light.png"
+      : "/brand/conferflow-wide-dark.png";
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
-        <ScanLine className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
-      </div>
-      {!compact && (
-        <div className="leading-none">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            Conferência
-          </div>
-          <div className="text-base font-extrabold tracking-tight">
-            Confer<span className="text-gradient-primary">Flow</span>
-          </div>
-        </div>
+    <img
+      src={src}
+      alt="ConferFlow"
+      className={cn(
+        "block select-none object-contain",
+        compact ? "h-10 w-10 rounded-xl" : "h-auto w-44 max-w-full",
+        className,
       )}
-    </div>
+      draggable={false}
+    />
   );
 }
