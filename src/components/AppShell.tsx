@@ -1,16 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, PackageCheck, ScanBarcode, Boxes, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, PackageCheck, ScanBarcode, Boxes, Settings, LogOut, HelpCircle } from "lucide-react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import type { ReactNode } from "react";
 
 const navItems = [
-  { to: "/", label: "Painel", mobileLabel: "Painel", icon: LayoutDashboard },
-  { to: "/recebimentos", label: "Recebimentos", mobileLabel: "NFs", icon: PackageCheck },
-  { to: "/conferencia", label: "Bipar", mobileLabel: "Bipar", icon: ScanBarcode, primary: true },
-  { to: "/inventario", label: "Inventario", mobileLabel: "Estoque", icon: Boxes },
-  { to: "/ajustes", label: "Ajustes", mobileLabel: "Ajustes", icon: Settings },
+  { to: "/", label: "Painel", mobileLabel: "Painel", tourKey: "painel", icon: LayoutDashboard },
+  { to: "/recebimentos", label: "Recebimentos", mobileLabel: "NFs", tourKey: "recebimentos", icon: PackageCheck },
+  { to: "/conferencia", label: "Bipar", mobileLabel: "Bipar", tourKey: "bipar", icon: ScanBarcode, primary: true },
+  { to: "/inventario", label: "Inventario", mobileLabel: "Estoque", tourKey: "inventario", icon: Boxes },
+  { to: "/ajustes", label: "Ajustes", mobileLabel: "Ajustes", tourKey: "ajustes", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -18,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { profile, user, roles, lojas, isAuditor, signOut } = useAuth();
   const roleLabel = roles[0] ? roles[0][0].toUpperCase() + roles[0].slice(1) : "Sem papel";
   const lojaLabel = isAuditor ? "Todas as lojas" : lojas[0] ?? "Sem loja";
+  const startTutorial = () => window.dispatchEvent(new Event("conferflow:start-tutorial"));
 
   return (
     <div className="relative min-h-screen pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
@@ -34,6 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
+                data-tour={item.tourKey}
                 className={cn(
                   "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active
@@ -48,6 +50,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="space-y-3 border-t border-sidebar-border p-4">
+          <button
+            type="button"
+            onClick={startTutorial}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 text-xs font-semibold text-primary hover:border-primary/50"
+          >
+            <HelpCircle className="h-4 w-4" />
+            Tutorial guiado
+          </button>
           <div className="rounded-lg bg-card/50 p-3">
             <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               Loja ativa
@@ -85,6 +95,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             {roleLabel}
           </div>
           <button
+            type="button"
+            onClick={startTutorial}
+            title="Tutorial guiado"
+            className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground"
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+          <button
             onClick={signOut}
             title="Sair"
             className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground"
@@ -105,9 +123,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             if (item.primary) {
               return (
                 <Link
-                  key={item.to}
-                  to={item.to}
-                  className="-mt-6 flex flex-col items-center justify-center"
+                key={item.to}
+                to={item.to}
+                data-tour={item.tourKey}
+                className="-mt-6 flex flex-col items-center justify-center"
                 >
                   <div
                     className={cn(
@@ -127,6 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
+                data-tour={item.tourKey}
                 className={cn(
                   "flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium uppercase transition-colors min-[380px]:text-[10px]",
                   active ? "text-primary" : "text-muted-foreground",

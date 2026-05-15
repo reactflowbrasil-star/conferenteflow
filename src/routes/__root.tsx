@@ -12,6 +12,7 @@ import {
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { GuidedTutorial } from "@/components/GuidedTutorial";
 import { Loader2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
@@ -137,6 +138,7 @@ function RootComponent() {
         <AuthGate>
           <Outlet />
         </AuthGate>
+        <GuidedTutorial />
         <Toaster position="top-center" richColors closeButton />
       </AuthProvider>
     </QueryClientProvider>
