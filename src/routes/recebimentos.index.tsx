@@ -11,7 +11,7 @@ import { NotaScanner } from "@/components/NotaScanner";
 export const Route = createFileRoute("/recebimentos/")({
   component: RecebimentosPage,
   head: () => ({
-    meta: [{ title: "Recebimentos · Super Padrão" }],
+    meta: [{ title: "Recebimentos · ConferFlow" }],
   }),
 });
 
@@ -47,10 +47,7 @@ function RecebimentosPage() {
     return data.filter((r) => {
       if (filtro !== "todos" && r.status !== filtro) return false;
       if (!term) return true;
-      return [r.numero_nf, r.fornecedor, r.loja]
-        .join(" ")
-        .toLowerCase()
-        .includes(term);
+      return [r.numero_nf, r.fornecedor, r.loja].join(" ").toLowerCase().includes(term);
     });
   }, [data, dq, filtro]);
 
@@ -104,9 +101,11 @@ function RecebimentosPage() {
               }`}
             >
               {label}
-              <span className={`rounded-full px-1.5 font-mono text-[10px] tabular-nums ${
-                filtro === key ? "bg-primary-foreground/20" : "bg-muted/60"
-              }`}>
+              <span
+                className={`rounded-full px-1.5 font-mono text-[10px] tabular-nums ${
+                  filtro === key ? "bg-primary-foreground/20" : "bg-muted/60"
+                }`}
+              >
                 {counts[key] ?? 0}
               </span>
             </button>
@@ -120,7 +119,8 @@ function RecebimentosPage() {
             </div>
           )}
           {filtered.map((r) => {
-            const pct = r.total_itens > 0 ? Math.round((r.total_conferidos / r.total_itens) * 100) : 0;
+            const pct =
+              r.total_itens > 0 ? Math.round((r.total_conferidos / r.total_itens) * 100) : 0;
             return (
               <Link
                 key={r.id}

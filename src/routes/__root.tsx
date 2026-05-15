@@ -77,23 +77,46 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
+      },
       { name: "theme-color", content: "#0b1220" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Super Padrão" },
+      { name: "apple-mobile-web-app-title", content: "ConferFlow" },
       { name: "mobile-web-app-capable", content: "yes" },
-      { title: "Super Padrão — Conferência Inteligente para Supermercados" },
-      { name: "description", content: "Super Padrão: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
-      { name: "author", content: "Super Padrão" },
-      { property: "og:title", content: "Super Padrão — Conferência Inteligente para Supermercados" },
-      { property: "og:description", content: "Super Padrão: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
+      { title: "ConferFlow" },
+      {
+        name: "description",
+        content:
+          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
+      },
+      { name: "author", content: "ConferFlow" },
+      { property: "og:title", content: "ConferFlow" },
+      {
+        property: "og:description",
+        content:
+          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Super Padrão — Conferência Inteligente para Supermercados" },
-      { name: "twitter:description", content: "Super Padrão: WMS mobile-first com IA para conferência de recebimentos, inventário e auditoria em supermercados e centros de distribuição." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png" },
+      { name: "twitter:title", content: "ConferFlow" },
+      {
+        name: "twitter:description",
+        content:
+          "ConferFlow: sistema mobile-first para recebimento, inventario e auditoria em supermercados.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76292918-09e9-40b5-bc1a-817376a3a4e4/id-preview-6f9699a2--1973fc99-60a8-4af1-b04e-b08fcd11f636.lovable.app-1778118577563.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

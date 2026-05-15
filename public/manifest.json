@@ -1,7 +1,7 @@
 {
-  "name": "Super Padrão — Conferência",
-  "short_name": "Super Padrão",
-  "description": "Sistema inteligente de conferência para supermercados — recebimento, inventário e auditoria com IA.",
+  "name": "ConferFlow",
+  "short_name": "ConferFlow",
+  "description": "ConferFlow: sistema inteligente para recebimento, inventario e auditoria em supermercados.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -5,7 +5,22 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Building2, Check, Mail, Plus, Shield, Store, Trash2, UserCog, Users } from "lucide-react";
+import {
+  Building2,
+  Check,
+  Mail,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  Shield,
+  Store,
+  Trash2,
+  UserCog,
+  Users,
+  UserX,
+  X,
+} from "lucide-react";
 
 export const Route = createFileRoute("/ajustes")({
   component: AjustesPage,
@@ -19,6 +34,38 @@ const ROLE_LABEL: Record<AppRole, string> = {
 };
 
 type Tab = "usuarios" | "lojas";
+type UserFilter = "todos" | "sem_acesso" | AppRole;
+
+type UserRow = {
+  id: string;
+  nome: string | null;
+  email: string | null;
+};
+
+type SupermercadoRow = {
+  id: string;
+  nome: string;
+  cnpj: string | null;
+};
+
+type LojaRow = {
+  id: string;
+  supermercado_id: string;
+  matriz_id: string | null;
+  nome: string;
+  codigo: string;
+  cnpj: string | null;
+  tipo: string;
+  endereco: string | null;
+  ativa: boolean;
+};
+
+type UserLojaRoleRow = {
+  id: string;
+  user_id: string;
+  loja_id: string;
+  role: AppRole;
+};
 
 function AjustesPage() {
   const { profile, user, roles, lojas, lojaRoles, isAuditor, isSupervisor } = useAuth();
@@ -114,37 +161,6 @@ function Mini({ icon, label, value }: { icon: ReactNode; label: string; value: s
   );
 }
 
-type UserRow = {
-  id: string;
-  nome: string | null;
-  email: string | null;
-};
-
-type SupermercadoRow = {
-  id: string;
-  nome: string;
-  cnpj: string | null;
-};
-
-type LojaRow = {
-  id: string;
-  supermercado_id: string;
-  matriz_id: string | null;
-  nome: string;
-  codigo: string;
-  cnpj: string | null;
-  tipo: string;
-  endereco: string | null;
-  ativa: boolean;
-};
-
-type UserLojaRoleRow = {
-  id: string;
-  user_id: string;
-  loja_id: string;
-  role: AppRole;
-};
-
 function useAdminData() {
   const users = useQuery({
     queryKey: ["admin", "profiles"],
@@ -226,10 +242,54 @@ function useAdminData() {
 function SupervisorUsersPanel() {
   const qc = useQueryClient();
   const { users, supermercados, lojas, globalRoles, lojaRoles, loading } = useAdminData();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<UserFilter>("todos");
+  const [lojaFilter, setLojaFilter] = useState("");
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["admin"] });
   };
+
+  const usersWithAccess = useMemo(
+    () =>
+      users.map((user) => {
+        const userGlobalRoles = globalRoles[user.id] ?? [];
+        const userLojaRoles = lojaRoles.filter((r) => r.user_id === user.id);
+        return {
+          user,
+          globalRoles: userGlobalRoles,
+          lojaRoles: userLojaRoles,
+          accessCount: userGlobalRoles.length + userLojaRoles.length,
+        };
+      }),
+    [globalRoles, lojaRoles, users],
+  );
+
+  const stats = useMemo(
+    () => ({
+      total: users.length,
+      semAcesso: usersWithAccess.filter((u) => u.accessCount === 0).length,
+      supervisores: usersWithAccess.filter((u) => u.globalRoles.includes("supervisor")).length,
+      vinculosLoja: lojaRoles.length,
+    }),
+    [lojaRoles.length, users.length, usersWithAccess],
+  );
+
+  const filteredUsers = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+    return usersWithAccess.filter(
+      ({ user, globalRoles: roles, lojaRoles: userLojaRoles, accessCount }) => {
+        const text = `${user.nome ?? ""} ${user.email ?? ""}`.toLowerCase();
+        const matchesSearch = !normalized || text.includes(normalized);
+        const matchesFilter =
+          filter === "todos" ||
+          (filter === "sem_acesso" && accessCount === 0) ||
+          (filter !== "sem_acesso" && roles.includes(filter));
+        const matchesLoja = !lojaFilter || userLojaRoles.some((r) => r.loja_id === lojaFilter);
+        return matchesSearch && matchesFilter && matchesLoja;
+      },
+    );
+  }, [filter, lojaFilter, search, usersWithAccess]);
 
   const toggleGlobalRole = async (userId: string, role: AppRole, has: boolean) => {
     const query = has
@@ -252,9 +312,30 @@ function SupervisorUsersPanel() {
     refresh();
   };
 
+  const updateProfile = async (userId: string, nome: string, email: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ nome: nome.trim() || null, email: email.trim() || null })
+      .eq("id", userId);
+    if (error) return toast.error(error.message);
+    toast.success("Perfil atualizado.");
+    refresh();
+  };
+
   const removeLojaRole = async (rowId: string) => {
     const { error } = await supabase.from("user_loja_roles").delete().eq("id", rowId);
     if (error) return toast.error(error.message);
+    refresh();
+  };
+
+  const clearUserAccess = async (userId: string) => {
+    const [{ error: globalError }, { error: lojaError }] = await Promise.all([
+      supabase.from("user_roles").delete().eq("user_id", userId),
+      supabase.from("user_loja_roles").delete().eq("user_id", userId),
+    ]);
+    const error = globalError ?? lojaError;
+    if (error) return toast.error(error.message);
+    toast.success("Acessos removidos.");
     refresh();
   };
 
@@ -266,8 +347,68 @@ function SupervisorUsersPanel() {
           <h2 className="text-lg font-semibold">Gerenciar usuários</h2>
         </div>
         <div className="text-xs text-muted-foreground">
-          Novos usuários aparecem aqui depois do cadastro na tela de login.
+          Usuários aparecem aqui depois do cadastro na tela de login.
         </div>
+      </div>
+
+      <div className="mb-4 grid gap-2 sm:grid-cols-4">
+        <Mini
+          icon={<Users className="h-3.5 w-3.5" />}
+          label="Usuários"
+          value={String(stats.total)}
+        />
+        <Mini
+          icon={<UserX className="h-3.5 w-3.5" />}
+          label="Sem acesso"
+          value={String(stats.semAcesso)}
+        />
+        <Mini
+          icon={<Shield className="h-3.5 w-3.5" />}
+          label="Supervisores"
+          value={String(stats.supervisores)}
+        />
+        <Mini
+          icon={<Store className="h-3.5 w-3.5" />}
+          label="Vínculos loja"
+          value={String(stats.vinculosLoja)}
+        />
+      </div>
+
+      <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-card p-3 lg:grid-cols-[1fr_180px_240px]">
+        <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome ou e-mail"
+            className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+        </label>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as UserFilter)}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none"
+        >
+          <option value="todos">Todos os usuários</option>
+          <option value="sem_acesso">Sem acesso</option>
+          {ROLES.map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABEL[r]}
+            </option>
+          ))}
+        </select>
+        <select
+          value={lojaFilter}
+          onChange={(e) => setLojaFilter(e.target.value)}
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none"
+        >
+          <option value="">Todas as lojas</option>
+          {lojas.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.nome} ({l.codigo})
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-3">
@@ -277,22 +418,29 @@ function SupervisorUsersPanel() {
           </div>
         )}
         {!loading &&
-          users.map((u) => (
+          filteredUsers.map(({ user, globalRoles: userGlobalRoles, lojaRoles: userLojaRoles }) => (
             <UserCard
-              key={u.id}
-              user={u}
-              globalRoles={globalRoles[u.id] ?? []}
-              lojaRoles={lojaRoles.filter((r) => r.user_id === u.id)}
+              key={user.id}
+              user={user}
+              globalRoles={userGlobalRoles}
+              lojaRoles={userLojaRoles}
               lojas={lojas}
               supermercados={supermercados}
               onToggleGlobalRole={toggleGlobalRole}
               onAddLojaRole={addLojaRole}
+              onUpdateProfile={updateProfile}
               onRemoveLojaRole={removeLojaRole}
+              onClearUserAccess={clearUserAccess}
             />
           ))}
         {!loading && users.length === 0 && (
           <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
             Nenhum usuário cadastrado ainda.
+          </div>
+        )}
+        {!loading && users.length > 0 && filteredUsers.length === 0 && (
+          <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+            Nenhum usuário encontrado com os filtros atuais.
           </div>
         )}
       </div>
@@ -308,7 +456,9 @@ function UserCard({
   supermercados,
   onToggleGlobalRole,
   onAddLojaRole,
+  onUpdateProfile,
   onRemoveLojaRole,
+  onClearUserAccess,
 }: {
   user: UserRow;
   globalRoles: AppRole[];
@@ -317,32 +467,109 @@ function UserCard({
   supermercados: SupermercadoRow[];
   onToggleGlobalRole: (uid: string, role: AppRole, has: boolean) => void;
   onAddLojaRole: (uid: string, lojaId: string, role: AppRole) => void;
+  onUpdateProfile: (uid: string, nome: string, email: string) => void;
   onRemoveLojaRole: (rowId: string) => void;
+  onClearUserAccess: (uid: string) => void;
 }) {
   const [lojaId, setLojaId] = useState("");
   const [role, setRole] = useState<AppRole>("conferente");
+  const [editing, setEditing] = useState(false);
+  const [nome, setNome] = useState(user.nome ?? "");
+  const [email, setEmail] = useState(user.email ?? "");
   const lojasById = useMemo(() => Object.fromEntries(lojas.map((l) => [l.id, l])), [lojas]);
   const mercadosById = useMemo(
     () => Object.fromEntries(supermercados.map((s) => [s.id, s])),
     [supermercados],
   );
+  const accessCount = globalRoles.length + lojaRoles.length;
+  const duplicateLojaRole = lojaRoles.some((r) => r.loja_id === lojaId && r.role === role);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <div className="font-semibold">{user.nome ?? "Sem nome"}</div>
-          <div className="truncate text-xs text-muted-foreground">{user.email}</div>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {globalRoles.map((r) => (
-            <span
-              key={r}
-              className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-semibold text-primary"
-            >
-              Global: {ROLE_LABEL[r]}
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Nome do usuário"
+                className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none"
+              />
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-mail"
+                className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="font-semibold">{user.nome ?? "Sem nome"}</div>
+              <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+            </>
+          )}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <span className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground">
+              {accessCount === 0 ? "Sem acesso" : `${accessCount} acessos`}
             </span>
-          ))}
+            {globalRoles.map((r) => (
+              <span
+                key={r}
+                className="rounded-full bg-primary/15 px-2.5 py-1 text-[11px] font-semibold text-primary"
+              >
+                Global: {ROLE_LABEL[r]}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdateProfile(user.id, nome, email);
+                  setEditing(false);
+                }}
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Salvar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNome(user.nome ?? "");
+                  setEmail(user.email ?? "");
+                  setEditing(false);
+                }}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground"
+                title="Cancelar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onClearUserAccess(user.id)}
+            disabled={accessCount === 0}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:border-destructive hover:text-destructive disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <UserX className="h-3.5 w-3.5" />
+            Suspender
+          </button>
         </div>
       </div>
 
@@ -376,36 +603,45 @@ function UserCard({
           <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
             Tipos de usuário por loja
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid gap-1.5 sm:grid-cols-2">
             {lojaRoles.map((item) => {
               const loja = lojasById[item.loja_id];
               const mercado = loja ? mercadosById[loja.supermercado_id] : null;
               return (
-                <span
+                <div
                   key={item.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/40 px-2.5 py-1 text-xs"
+                  className="flex min-h-10 items-center justify-between gap-2 rounded-xl border border-border bg-background/40 px-3 py-2 text-xs"
                 >
-                  {mercado?.nome ?? "Supermercado"} / {loja?.nome ?? "Loja"}:{" "}
-                  {ROLE_LABEL[item.role]}
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">
+                      {mercado?.nome ?? "Supermercado"} / {loja?.nome ?? "Loja"}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {ROLE_LABEL[item.role]}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => onRemoveLojaRole(item.id)}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"
                     title="Remover acesso"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                </span>
+                </div>
               );
             })}
             {lojaRoles.length === 0 && (
-              <span className="text-xs text-muted-foreground">Sem acesso específico por loja.</span>
+              <div className="rounded-xl border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+                Sem acesso específico por loja.
+              </div>
             )}
           </div>
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (duplicateLojaRole) return toast.error("Este acesso já existe para o usuário.");
               onAddLojaRole(user.id, lojaId, role);
               setLojaId("");
               setRole("conferente");
@@ -437,7 +673,8 @@ function UserCard({
             </select>
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              disabled={!lojaId || duplicateLojaRole}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Plus className="h-4 w-4" />
               Adicionar

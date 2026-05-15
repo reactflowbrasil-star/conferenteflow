@@ -9,10 +9,10 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <div className="leading-none">
           <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            WMS · Conferência
+            Conferência
           </div>
-          <div className="font-extrabold text-base tracking-tight">
-            Super <span className="text-gradient-primary">Padrão</span>
+          <div className="text-base font-extrabold tracking-tight">
+            Confer<span className="text-gradient-primary">Flow</span>
           </div>
         </div>
       )}
