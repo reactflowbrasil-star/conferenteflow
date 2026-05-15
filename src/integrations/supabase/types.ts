@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      lojas: {
+        Row: {
+          ativa: boolean
+          cnpj: string | null
+          codigo: string
+          created_at: string
+          endereco: string | null
+          id: string
+          matriz_id: string | null
+          nome: string
+          supermercado_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          cnpj?: string | null
+          codigo: string
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          matriz_id?: string | null
+          nome: string
+          supermercado_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          cnpj?: string | null
+          codigo?: string
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          matriz_id?: string | null
+          nome?: string
+          supermercado_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lojas_matriz_id_fkey"
+            columns: ["matriz_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lojas_supermercado_id_fkey"
+            columns: ["supermercado_id"]
+            isOneToOne: false
+            referencedRelation: "supermercados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -147,6 +204,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      supermercados: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_loja_roles: {
+        Row: {
+          created_at: string
+          id: string
+          loja_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          loja_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          loja_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_loja_roles_loja_id_fkey"
+            columns: ["loja_id"]
+            isOneToOne: false
+            referencedRelation: "lojas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_lojas: {
         Row: {
