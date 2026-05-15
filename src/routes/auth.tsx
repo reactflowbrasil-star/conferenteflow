@@ -5,7 +5,8 @@ import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
-import { Loader2, Mail, Lock, User as UserIcon } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, ScanFace } from "lucide-react";
+import { useFaceLogin, isFaceAuthSupported } from "@/hooks/useFaceAuth";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -22,6 +23,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { login: faceLogin, busy: faceBusy } = useFaceLogin();
+  const faceSupported = typeof window !== "undefined" && isFaceAuthSupported();
 
   useEffect(() => {
     if (!loading && session && pathname === "/auth") {
