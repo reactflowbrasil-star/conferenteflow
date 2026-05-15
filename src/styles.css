@@ -98,15 +98,33 @@
   }
   html,
   body {
+    min-height: 100%;
+    overflow-x: hidden;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
   body {
+    min-height: 100svh;
     background-image: var(--gradient-glow);
     background-repeat: no-repeat;
     background-size: 100% 600px;
+  }
+  #root {
+    min-height: 100svh;
+  }
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
   }
 }
 

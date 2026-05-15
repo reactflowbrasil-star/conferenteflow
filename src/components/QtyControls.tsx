@@ -54,8 +54,8 @@ export function QtyControls({ qtdConferida, qtdEsperada, unidade, highlight, onD
   const isOk = qtdConferida >= qtdEsperada && qtdConferida > 0;
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
-      <div className="flex items-center gap-1.5">
+    <div className="flex w-full flex-col items-stretch gap-1.5 sm:w-auto sm:items-end">
+      <div className="flex items-center justify-between gap-1.5 sm:justify-end">
         <button
           type="button"
           {...dec}
@@ -125,7 +125,7 @@ export function QtyControls({ qtdConferida, qtdEsperada, unidade, highlight, onD
       </div>
 
       {/* Chips de incremento rápido */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-end gap-1">
         {[5, 10].map((n) => (
           <button
             key={n}

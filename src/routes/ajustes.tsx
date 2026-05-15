@@ -75,7 +75,7 @@ function AjustesPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-10">
+      <div className="mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Ajustes</h1>
@@ -85,7 +85,7 @@ function AjustesPage() {
           </div>
 
           {isSupervisor && (
-            <div className="inline-grid grid-cols-2 rounded-xl border border-border bg-card p-1 text-xs font-semibold">
+            <div className="grid w-full grid-cols-2 rounded-xl border border-border bg-card p-1 text-xs font-semibold sm:w-auto">
               <button
                 type="button"
                 onClick={() => setTab("usuarios")}
@@ -110,15 +110,15 @@ function AjustesPage() {
           )}
         </div>
 
-        <section className="mb-6 rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
+        <section className="mb-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-primary text-lg font-bold text-primary-foreground">
               {(profile?.nome ?? user?.email ?? "?").slice(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">{profile?.nome ?? "Sem nome"}</div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Mail className="h-3 w-3" /> {user?.email}
+              <div className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                <Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{user?.email}</span>
               </div>
             </div>
           </div>
@@ -351,7 +351,7 @@ function SupervisorUsersPanel() {
         </div>
       </div>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 lg:grid-cols-4">
         <Mini
           icon={<Users className="h-3.5 w-3.5" />}
           label="Usuários"
@@ -374,7 +374,7 @@ function SupervisorUsersPanel() {
         />
       </div>
 
-      <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-card p-3 lg:grid-cols-[1fr_180px_240px]">
+      <div className="mb-4 grid gap-2 rounded-2xl border border-border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[1fr_180px_240px]">
         <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
@@ -400,7 +400,7 @@ function SupervisorUsersPanel() {
         <select
           value={lojaFilter}
           onChange={(e) => setLojaFilter(e.target.value)}
-          className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none"
+          className="h-10 rounded-xl border border-border bg-background px-3 text-sm outline-none sm:col-span-2 lg:col-span-1"
         >
           <option value="">Todas as lojas</option>
           {lojas.map((l) => (
@@ -485,7 +485,7 @@ function UserCard({
   const duplicateLojaRole = lojaRoles.some((r) => r.loja_id === lojaId && r.role === role);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="rounded-2xl border border-border bg-card p-3.5 sm:p-4">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
           {editing ? (
@@ -524,7 +524,7 @@ function UserCard({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex w-full flex-wrap gap-1.5 md:w-auto md:justify-end">
           {editing ? (
             <>
               <button
@@ -533,7 +533,7 @@ function UserCard({
                   onUpdateProfile(user.id, nome, email);
                   setEditing(false);
                 }}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground"
+                className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground min-[420px]:flex-none"
               >
                 <Save className="h-3.5 w-3.5" />
                 Salvar
@@ -555,7 +555,7 @@ function UserCard({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:text-foreground min-[420px]:flex-none"
             >
               <Pencil className="h-3.5 w-3.5" />
               Editar
@@ -565,7 +565,7 @@ function UserCard({
             type="button"
             onClick={() => onClearUserAccess(user.id)}
             disabled={accessCount === 0}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:border-destructive hover:text-destructive disabled:cursor-not-allowed disabled:opacity-45"
+            className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:border-destructive hover:text-destructive disabled:cursor-not-allowed disabled:opacity-45 min-[420px]:flex-none"
           >
             <UserX className="h-3.5 w-3.5" />
             Suspender
@@ -603,7 +603,7 @@ function UserCard({
           <div className="mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
             Tipos de usuário por loja
           </div>
-          <div className="grid gap-1.5 sm:grid-cols-2">
+          <div className="grid gap-1.5 md:grid-cols-2">
             {lojaRoles.map((item) => {
               const loja = lojasById[item.loja_id];
               const mercado = loja ? mercadosById[loja.supermercado_id] : null;
@@ -646,7 +646,7 @@ function UserCard({
               setLojaId("");
               setRole("conferente");
             }}
-            className="mt-3 grid gap-2 md:grid-cols-[1fr_160px_auto]"
+              className="mt-3 grid gap-2 md:grid-cols-[1fr_160px_auto]"
           >
             <select
               value={lojaId}
@@ -812,7 +812,7 @@ function StoresPanel() {
                 </option>
               ))}
             </select>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 min-[360px]:grid-cols-2">
               <button
                 type="button"
                 onClick={() =>
@@ -860,7 +860,7 @@ function StoresPanel() {
               placeholder="Nome da loja"
               className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none"
             />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 min-[360px]:grid-cols-2">
               <input
                 value={lojaForm.codigo}
                 onChange={(e) => setLojaForm((current) => ({ ...current, codigo: e.target.value }))}

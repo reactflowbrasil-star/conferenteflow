@@ -31,7 +31,7 @@ function DashboardPage() {
     },
   });
 
-  // KPIs contam o universo total, não só os 8 últimos
+  // KPIs contam o universo total, nao so os 8 ultimos.
   const { data: kpis } = useQuery({
     queryKey: ["recebimentos", "kpis"],
     queryFn: async () => {
@@ -78,94 +78,68 @@ function DashboardPage() {
     <AppShell>
       <div className="grid-bg absolute inset-x-0 top-0 h-64 opacity-40" />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-10">
-        {/* Hero / greeting */}
-        <section className="mb-8">
+      <div className="relative mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-10">
+        <section className="mb-6 md:mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
             <Sparkles className="h-3 w-3" />
-            Operação em tempo real
+            Operacao em tempo real
           </div>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight md:text-4xl">
+          <h1 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl md:text-4xl">
             Bom turno, <span className="text-gradient-primary">conferente</span>.
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            {recebimentos.length} notas no radar · {pendentes} aguardando conferência
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground md:text-base">
+            {recebimentos.length} notas no radar · {pendentes} aguardando conferencia
           </p>
         </section>
 
-        {/* KPIs */}
-        <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard
-            icon={<PackageCheck className="h-4 w-4" />}
-            label="Pendentes"
-            value={pendentes}
-            tone="muted"
-          />
-          <KpiCard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Em conferência"
-            value={emConf}
-            tone="accent"
-          />
-          <KpiCard
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            label="Finalizados hoje"
-            value={finalizados}
-            tone="success"
-          />
-          <KpiCard
-            icon={<AlertTriangle className="h-4 w-4" />}
-            label="Divergências"
-            value={divergencias}
-            tone="destructive"
-          />
+        <section className="mb-6 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 md:mb-8 md:grid-cols-4 md:gap-3">
+          <KpiCard icon={<PackageCheck className="h-4 w-4" />} label="Pendentes" value={pendentes} tone="muted" />
+          <KpiCard icon={<TrendingUp className="h-4 w-4" />} label="Em conferencia" value={emConf} tone="accent" />
+          <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label="Finalizados hoje" value={finalizados} tone="success" />
+          <KpiCard icon={<AlertTriangle className="h-4 w-4" />} label="Divergencias" value={divergencias} tone="destructive" />
         </section>
 
-        {/* Quick actions */}
-        <section className="mb-8 grid gap-3 md:grid-cols-3">
+        <section className="mb-6 grid gap-2 sm:grid-cols-2 md:mb-8 md:grid-cols-3 md:gap-3">
           <Link
             to="/conferencia"
-            className="group relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-primary p-5 shadow-elevated transition-transform hover:-translate-y-0.5"
+            className="group relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-primary p-4 shadow-elevated transition-transform hover:-translate-y-0.5 sm:p-5"
           >
             <div className="font-mono text-[10px] uppercase tracking-widest text-primary-foreground/70">
-              Ação rápida
+              Acao rapida
             </div>
-            <div className="mt-2 text-xl font-bold text-primary-foreground">
-              Iniciar bipagem
-            </div>
+            <div className="mt-2 text-xl font-bold text-primary-foreground">Iniciar bipagem</div>
             <div className="mt-1 text-xs text-primary-foreground/80">
-              Abra a câmera e leia o código
+              Abra a camera e leia o codigo
             </div>
             <ArrowRight className="absolute right-5 top-5 h-5 w-5 text-primary-foreground transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
             to="/recebimentos"
-            className="group rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
+            className="group rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/30 sm:p-5"
           >
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Recebimentos
             </div>
-            <div className="mt-2 text-xl font-bold">Conferência cega</div>
+            <div className="mt-2 text-xl font-bold">Conferencia cega</div>
             <div className="mt-1 text-xs text-muted-foreground">
               Veja NF-es pendentes e em andamento
             </div>
           </Link>
-          <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               IA Visual
             </div>
             <div className="mt-2 text-xl font-bold">Detectar caixas</div>
             <div className="mt-1 text-xs text-muted-foreground">
-              Em breve · contagem por câmera
+              Em breve · contagem por camera
             </div>
           </div>
         </section>
 
-        {/* Recent receipts */}
         <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Últimos recebimentos</h2>
-            <Link to="/recebimentos" className="text-xs text-primary hover:underline">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Ultimos recebimentos</h2>
+            <Link to="/recebimentos" className="shrink-0 text-xs text-primary hover:underline">
               Ver todos
             </Link>
           </div>
@@ -179,7 +153,7 @@ function DashboardPage() {
                 />
               ))}
             {!isLoading && recebimentos.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-border bg-card/30 p-10 text-center text-sm text-muted-foreground">
+              <div className="rounded-2xl border border-dashed border-border bg-card/30 p-8 text-center text-sm text-muted-foreground sm:p-10">
                 Nenhum recebimento ainda.
               </div>
             )}
@@ -188,10 +162,10 @@ function DashboardPage() {
                 key={r.id}
                 to="/recebimentos/$id"
                 params={{ id: r.id }}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between sm:p-4"
               >
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-xs text-muted-foreground">
                       NF #{r.numero_nf}
                     </span>
@@ -202,7 +176,7 @@ function DashboardPage() {
                     {r.loja} · {formatDateTime(r.created_at)}
                   </div>
                 </div>
-                <div className="ml-3 text-right">
+                <div className="w-full text-left min-[390px]:ml-3 min-[390px]:w-auto min-[390px]:text-right">
                   <div className="font-mono text-lg font-bold tabular-nums">
                     {r.total_conferidos}
                     <span className="text-muted-foreground">/{r.total_itens}</span>
@@ -238,12 +212,12 @@ function KpiCard({
     destructive: "text-destructive",
   } as const;
   return (
-    <div className="rounded-2xl border border-border bg-gradient-surface p-4 shadow-elevated">
-      <div className={`flex items-center gap-1.5 text-xs ${toneMap[tone]}`}>
-        {icon}
-        <span className="font-medium uppercase tracking-wide">{label}</span>
+    <div className="rounded-2xl border border-border bg-gradient-surface p-3 shadow-elevated sm:p-4">
+      <div className={`flex min-w-0 items-center gap-1.5 text-xs ${toneMap[tone]}`}>
+        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 truncate font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className="mt-2 font-mono text-3xl font-bold tabular-nums">{value}</div>
+      <div className="mt-2 font-mono text-2xl font-bold tabular-nums sm:text-3xl">{value}</div>
     </div>
   );
 }

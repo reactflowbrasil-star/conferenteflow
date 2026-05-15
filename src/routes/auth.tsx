@@ -80,14 +80,14 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative min-h-[100svh] overflow-hidden bg-background">
       <div className="grid-bg absolute inset-0 opacity-30" />
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-10">
+      <div className="relative mx-auto flex min-h-[100svh] max-w-md flex-col items-center justify-center px-3 py-6 sm:px-5 sm:py-10">
         <div className="mb-6">
-          <Logo />
+          <Logo className="w-40 sm:w-44" />
         </div>
 
-        <div className="w-full rounded-3xl border border-border bg-card/80 p-6 shadow-elevated backdrop-blur">
+        <div className="w-full rounded-2xl border border-border bg-card/80 p-5 shadow-elevated backdrop-blur sm:rounded-3xl sm:p-6">
           <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
             {mode === "signin" ? "Entrar" : "Criar conta"}
           </div>

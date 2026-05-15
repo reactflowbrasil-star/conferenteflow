@@ -343,7 +343,7 @@ function ConferenciaPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl px-4 py-5 md:px-8 md:py-8">
+      <div className="mx-auto max-w-3xl px-3 py-4 sm:px-4 sm:py-5 md:px-8 md:py-8">
         <Link
           to="/recebimentos"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
@@ -352,8 +352,8 @@ function ConferenciaPage() {
         </Link>
 
         {/* Header card */}
-        <div className="mt-3 rounded-2xl border border-border bg-gradient-surface p-5 shadow-elevated">
-          <div className="flex items-center justify-between gap-3">
+        <div className="mt-3 rounded-2xl border border-border bg-gradient-surface p-4 shadow-elevated sm:p-5">
+          <div className="flex flex-col gap-3 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between">
             <div className="min-w-0 flex-1">
               <div className="font-mono text-[11px] text-muted-foreground">
                 NF #{receb.numero_nf}
@@ -368,7 +368,7 @@ function ConferenciaPage() {
             <StatusBadge status={receb.status} />
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-2">
+          <div className="mt-5 grid grid-cols-3 gap-1.5 sm:gap-2">
             <Mini label="Itens" value={`${totals.total}`} />
             <Mini label="Conferidos" value={`${totals.conferidos}`} tone="success" />
             <Mini label="Divergências" value={`${totals.divergencias}`} tone="destructive" />
@@ -391,10 +391,10 @@ function ConferenciaPage() {
         {/* Bipagem input */}
         <form
           onSubmit={handleScan}
-          className="sticky top-14 z-10 mt-5 rounded-2xl border border-primary/30 bg-card/95 p-3 shadow-elevated backdrop-blur md:top-4"
+          className="sticky top-[58px] z-10 mt-4 rounded-2xl border border-primary/30 bg-card/95 p-2.5 shadow-elevated backdrop-blur sm:p-3 md:top-4"
         >
           <div className="flex items-center gap-2">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-primary shadow-glow">
+            <div className="hidden h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary shadow-glow min-[360px]:grid">
               <ScanLine className="h-5 w-5 text-primary-foreground" />
             </div>
             <input
@@ -404,7 +404,7 @@ function ConferenciaPage() {
               value={scanInput}
               onChange={(e) => setScanInput(e.target.value)}
               placeholder="Bipar código de barras…"
-              className="h-11 w-full bg-transparent text-base font-mono outline-none placeholder:text-muted-foreground"
+              className="h-11 min-w-0 flex-1 bg-transparent text-base font-mono outline-none placeholder:text-muted-foreground"
             />
             <button
               type="button"
@@ -431,31 +431,31 @@ function ConferenciaPage() {
               <Camera className="h-4 w-4" />
             </button>
           </div>
-          <div className="mt-2 flex items-center gap-2 sm:hidden">
+          <div className="mt-2 grid grid-cols-3 gap-2 sm:hidden">
             <button
               type="button"
               onClick={() => setVoiceOpen(true)}
-              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+              className="flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-1 text-xs font-medium text-primary active:scale-[0.98]"
             >
               <Mic className="h-3.5 w-3.5" /> Voz
             </button>
             <button
               type="button"
               onClick={() => setCameraOpen(true)}
-              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 text-xs font-medium text-primary active:scale-[0.98]"
+              className="flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-1 text-xs font-medium text-primary active:scale-[0.98]"
             >
               <Camera className="h-3.5 w-3.5" /> IA Caixas
             </button>
             <button
               type="button"
               onClick={() => setShowHist((v) => !v)}
-              className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background text-xs font-medium active:scale-[0.98]"
+              className="flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-1 text-xs font-medium active:scale-[0.98]"
             >
               <History className="h-3.5 w-3.5" /> Histórico
             </button>
           </div>
           {/* Multiplicador inteligente: próxima bipagem soma N */}
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div className="-mx-1 mt-2 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
             <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               <Zap className="h-3 w-3" /> Próx. bip
             </span>
@@ -464,7 +464,7 @@ function ConferenciaPage() {
                 key={n}
                 type="button"
                 onClick={() => setQtyMultiplier(n)}
-                className={`rounded-md px-2 py-0.5 font-mono text-[11px] font-bold transition active:scale-95 ${
+                className={`shrink-0 rounded-md px-2 py-0.5 font-mono text-[11px] font-bold transition active:scale-95 ${
                   qtyMultiplier === n
                     ? "bg-gradient-primary text-primary-foreground shadow-glow"
                     : "border border-border bg-background text-muted-foreground"
@@ -477,7 +477,7 @@ function ConferenciaPage() {
               <button
                 type="button"
                 onClick={() => setQtyMultiplier(1)}
-                className="ml-auto inline-flex items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-md border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground"
                 title="Resetar"
               >
                 <X className="h-3 w-3" /> reset
@@ -508,12 +508,12 @@ function ConferenciaPage() {
             ) : (
               <ul className="max-h-56 space-y-1.5 overflow-auto">
                 {historico.map((h, i) => (
-                  <li key={i} className="flex items-start justify-between gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-xs">
+                  <li key={i} className="flex flex-col gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-xs min-[390px]:flex-row min-[390px]:items-start min-[390px]:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="break-words font-medium leading-snug">{h.descricao}</div>
                       <div className="font-mono text-[10px] text-muted-foreground">{h.ean}</div>
                     </div>
-                    <div className="shrink-0 text-right">
+                    <div className="shrink-0 text-left min-[390px]:text-right">
                       <div className="font-mono font-bold tabular-nums">+1 → {h.qtd}</div>
                       <div className="text-[10px] text-muted-foreground">
                         {new Date(h.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
@@ -537,7 +537,7 @@ function ConferenciaPage() {
               className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+          <div className="-mx-3 flex items-center gap-1.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
             <Filter className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             {([
               ["todos", "Todos"],
@@ -574,7 +574,7 @@ function ConferenciaPage() {
               <div
                 key={item.id}
                 id={`item-${item.id}`}
-                className={`rounded-2xl border p-3.5 transition-all ${
+                className={`rounded-2xl border p-3 transition-all sm:p-3.5 ${
                   activeId === item.id
                     ? "border-primary bg-primary/5 shadow-glow"
                     : isOk
@@ -584,7 +584,7 @@ function ConferenciaPage() {
                     : "border-border bg-card"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       {isOk && <Check className="h-3.5 w-3.5 text-success" />}
@@ -602,14 +602,16 @@ function ConferenciaPage() {
                     </div>
                   </div>
 
-                  <QtyControls
-                    qtdConferida={Number(item.qtd_conferida)}
-                    qtdEsperada={Number(item.qtd_esperada)}
-                    unidade={item.unidade}
-                    highlight={lastChangedId === item.id}
-                    onDelta={(d) => updateQuantity(item, d)}
-                    onSet={(q) => setQty(item.id, q)}
-                  />
+                  <div className="w-full sm:w-auto">
+                    <QtyControls
+                      qtdConferida={Number(item.qtd_conferida)}
+                      qtdEsperada={Number(item.qtd_esperada)}
+                      unidade={item.unidade}
+                      highlight={lastChangedId === item.id}
+                      onDelta={(d) => updateQuantity(item, d)}
+                      onSet={(q) => setQty(item.id, q)}
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -617,7 +619,7 @@ function ConferenciaPage() {
         </div>
 
         {/* Finalizar */}
-        <div className="sticky bottom-3 mt-6 z-10">
+        <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-10 mt-6 md:bottom-3">
           <button
             onClick={finalizarNota}
             disabled={finalizando || receb.status === "finalizado" || receb.status === "com_divergencia"}
@@ -643,7 +645,7 @@ function ConferenciaPage() {
           type="button"
           onClick={() => setVoiceOpen(true)}
           aria-label="Abrir conferência por voz"
-          className="fixed bottom-24 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow active:scale-95 sm:bottom-6"
+          className="fixed bottom-[calc(10.25rem+env(safe-area-inset-bottom))] right-3 z-30 grid h-14 w-14 place-items-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow active:scale-95 sm:bottom-6 sm:right-4"
         >
           <span className="absolute inset-0 rounded-full bg-primary/30 animate-mic-ping" aria-hidden />
           <Mic className="relative h-6 w-6" />
