@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Zap, ZapOff, RotateCcw, Loader2 } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
@@ -31,22 +31,28 @@ export function BarcodeScanner({ open, onClose, onDetect, cooldownMs = 1500 }: P
   const streamRef = useRef<MediaStream | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
   const lastRef = useRef<{ code: string; t: number }>({ code: "", t: 0 });
+  const lastHitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [status, setStatus] = useState<"idle" | "starting" | "scanning" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [torchOn, setTorchOn] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [lastHit, setLastHit] = useState<string | null>(null);
+  const [restartKey, setRestartKey] = useState(0);
 
-  const handleHit = (code: string) => {
-    const c = code.trim();
-    if (!c) return;
-    const now = Date.now();
-    if (lastRef.current.code === c && now - lastRef.current.t < cooldownMs) return;
-    lastRef.current = { code: c, t: now };
-    setLastHit(c);
-    setTimeout(() => setLastHit((v) => (v === c ? null : v)), 600);
-    onDetect(c);
-  };
+  const handleHit = useCallback(
+    (code: string) => {
+      const c = code.trim();
+      if (!c) return;
+      const now = Date.now();
+      if (lastRef.current.code === c && now - lastRef.current.t < cooldownMs) return;
+      lastRef.current = { code: c, t: now };
+      setLastHit(c);
+      if (lastHitTimerRef.current) clearTimeout(lastHitTimerRef.current);
+      lastHitTimerRef.current = setTimeout(() => setLastHit((v) => (v === c ? null : v)), 600);
+      onDetect(c);
+    },
+    [cooldownMs, onDetect],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -76,11 +82,15 @@ export function BarcodeScanner({ open, onClose, onDetect, cooldownMs = 1500 }: P
 
         // Verifica torch
         const track = stream.getVideoTracks()[0];
-        const caps = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & { torch?: boolean };
+        const caps = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
+          torch?: boolean;
+        };
         setTorchAvailable(!!caps.torch);
 
         // 1) Tenta BarcodeDetector nativo
-        const native = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => DetectorLike }).BarcodeDetector;
+        const native = (
+          window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => DetectorLike }
+        ).BarcodeDetector;
         if (native) {
           const detector = new native({
             formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code", "itf"],
@@ -127,16 +137,22 @@ export function BarcodeScanner({ open, onClose, onDetect, cooldownMs = 1500 }: P
       stopRef.current = null;
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
+      if (lastHitTimerRef.current) clearTimeout(lastHitTimerRef.current);
+      lastHitTimerRef.current = null;
+      setTorchOn(false);
+      setTorchAvailable(false);
+      setLastHit(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [handleHit, open, restartKey]);
 
   const toggleTorch = async () => {
     const track = streamRef.current?.getVideoTracks()[0];
     if (!track) return;
     try {
       const next = !torchOn;
-      await track.applyConstraints({ advanced: [{ torch: next } as unknown as MediaTrackConstraintSet] });
+      await track.applyConstraints({
+        advanced: [{ torch: next } as unknown as MediaTrackConstraintSet],
+      });
       setTorchOn(next);
     } catch {
       setTorchAvailable(false);
@@ -201,8 +217,7 @@ export function BarcodeScanner({ open, onClose, onDetect, cooldownMs = 1500 }: P
             <div className="mt-1 text-xs opacity-90 break-words">{errorMsg}</div>
             <button
               onClick={() => {
-                setStatus("idle");
-                setTimeout(() => setStatus("starting"), 50);
+                setRestartKey((value) => value + 1);
               }}
               className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-white/20 px-3 py-1.5 text-xs"
             >

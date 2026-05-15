@@ -183,4 +183,172 @@
   .animate-mic-ping {
     animation: pingMic 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
+  .intro-screen {
+    isolation: isolate;
+    animation: introStage 10s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .intro-screen--leaving {
+    animation: introExit 0.65s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  }
+  .intro-grid {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.045) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(circle at center, black, transparent 72%);
+    animation: introGridDrift 10s linear both;
+  }
+  .intro-vignette {
+    background:
+      radial-gradient(circle at 50% 42%, oklch(0.64 0.22 255 / 0.22), transparent 36%),
+      radial-gradient(circle at 24% 36%, oklch(0.72 0.2 235 / 0.16), transparent 26%),
+      radial-gradient(circle at 76% 66%, oklch(0.58 0.24 265 / 0.14), transparent 28%),
+      linear-gradient(180deg, oklch(0.07 0.03 260), oklch(0.02 0.02 260));
+  }
+  .intro-panel {
+    position: absolute;
+    inset-block: 0;
+    z-index: 4;
+    width: 52%;
+    background: linear-gradient(90deg, oklch(0.02 0.02 260), oklch(0.09 0.04 260));
+    animation: introCurtainLeft 1.5s cubic-bezier(0.76, 0, 0.24, 1) 0.25s both;
+  }
+  .intro-panel-right {
+    right: 0;
+    transform-origin: right;
+    animation-name: introCurtainRight;
+  }
+  .intro-panel-left {
+    left: 0;
+    transform-origin: left;
+  }
+  .intro-scan {
+    position: absolute;
+    inset: -20% auto -20% -18%;
+    z-index: 3;
+    width: 22%;
+    transform: skewX(-16deg);
+    background: linear-gradient(90deg, transparent, oklch(0.7 0.22 245 / 0.34), transparent);
+    filter: blur(18px);
+    animation: introScan 5.6s cubic-bezier(0.16, 1, 0.3, 1) 1.1s both;
+  }
+  .intro-mark {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+    filter: blur(18px);
+    animation: introLogoReveal 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+  }
+  .intro-logo {
+    filter: drop-shadow(0 28px 70px oklch(0 0 0 / 0.6))
+      drop-shadow(0 0 34px oklch(0.64 0.22 255 / 0.28));
+    animation: introLogoFloat 5.2s ease-in-out 2.2s infinite;
+  }
+  .intro-copy {
+    opacity: 0;
+    transform: translateY(14px);
+    animation: introCopyReveal 1.1s ease-out 1.55s forwards;
+  }
+  .intro-progress > div {
+    width: 100%;
+    transform-origin: left;
+    animation: introProgress 10s linear forwards;
+  }
+  @keyframes introStage {
+    0% {
+      transform: scale(1.015);
+    }
+    12%,
+    88% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.02);
+    }
+  }
+  @keyframes introExit {
+    to {
+      opacity: 0;
+      transform: scale(1.04);
+      filter: blur(14px);
+      visibility: hidden;
+    }
+  }
+  @keyframes introCurtainLeft {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-104%);
+    }
+  }
+  @keyframes introCurtainRight {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(104%);
+    }
+  }
+  @keyframes introLogoReveal {
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+  @keyframes introLogoFloat {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-8px) scale(1.012);
+    }
+  }
+  @keyframes introCopyReveal {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes introProgress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes introScan {
+    from {
+      opacity: 0;
+      transform: translateX(0) skewX(-16deg);
+    }
+    15%,
+    75% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(620%) skewX(-16deg);
+    }
+  }
+  @keyframes introGridDrift {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 92px 46px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .intro-screen,
+    .intro-screen *,
+    .intro-screen::before,
+    .intro-screen::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

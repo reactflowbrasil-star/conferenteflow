@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,16 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [lojas, setLojas] = useState<string[]>([]);
   const [lojaRoles, setLojaRoles] = useState<LojaRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(false);
 
-  const loadUserData = async (uid: string) => {
-    const [{ data: prof }, { data: roleRows }, { data: lojaRows }, { data: lojaRoleRows }] =
-      await Promise.all([
-        supabase.from("profiles").select("id,nome,email").eq("id", uid).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", uid),
-        supabase.from("user_lojas").select("loja").eq("user_id", uid),
-        supabase.from("user_loja_roles").select("role, lojas(id,nome,codigo)").eq("user_id", uid),
-      ]);
-    const structuredLojaRoles = (lojaRoleRows ?? [])
+  const clearUserData = useCallback(() => {
+    if (!mountedRef.current) return;
+    setProfile(null);
+    setRoles([]);
+    setLojas([]);
+    setLojaRoles([]);
+  }, []);
+
+  const loadUserData = useCallback(async (uid: string) => {
+    const [profileRes, roleRes, lojaRes, lojaRoleRes] = await Promise.all([
+      supabase.from("profiles").select("id,nome,email").eq("id", uid).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.from("user_lojas").select("loja").eq("user_id", uid),
+      supabase.from("user_loja_roles").select("role, lojas(id,nome,codigo)").eq("user_id", uid),
+    ]);
+
+    const error = profileRes.error ?? roleRes.error ?? lojaRes.error ?? lojaRoleRes.error;
+    if (error) throw error;
+    if (!mountedRef.current) return;
+
+    const structuredLojaRoles = (lojaRoleRes.data ?? [])
       .map((r) => {
         const loja = Array.isArray(r.lojas) ? r.lojas[0] : r.lojas;
         if (!loja) return null;
@@ -64,55 +86,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       })
       .filter((r): r is LojaRole => Boolean(r));
+
     const nextRoles = Array.from(
       new Set([
-        ...(roleRows ?? []).map((r) => r.role as AppRole),
+        ...(roleRes.data ?? []).map((r) => r.role as AppRole),
         ...structuredLojaRoles.map((r) => r.role),
       ]),
     );
     const nextLojas = Array.from(
       new Set([
-        ...(lojaRows ?? []).map((r) => r.loja as string),
+        ...(lojaRes.data ?? []).map((r) => r.loja as string),
         ...structuredLojaRoles.flatMap((r) => [r.loja, r.codigo]),
       ]),
     );
-    setProfile((prof as Profile) ?? null);
+
+    setProfile((profileRes.data as Profile) ?? null);
     setRoles(nextRoles);
     setLojas(nextLojas);
     setLojaRoles(structuredLojaRoles);
-  };
-
-  const clearUserData = () => {
-    setProfile(null);
-    setRoles([]);
-    setLojas([]);
-    setLojaRoles([]);
-  };
+  }, []);
 
   useEffect(() => {
-    // 1. Listener primeiro
+    mountedRef.current = true;
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       if (newSession?.user) {
-        // defer to avoid deadlock
-        setTimeout(() => loadUserData(newSession.user.id), 0);
+        setTimeout(() => {
+          loadUserData(newSession.user.id).catch((error) => {
+            console.error("[Auth] Failed to load user data", error);
+            clearUserData();
+          });
+        }, 0);
       } else {
         clearUserData();
       }
     });
 
-    // 2. Pega sessão existente
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) {
-        loadUserData(data.session.user.id).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!mountedRef.current) return;
+        setSession(data.session);
+        if (data.session?.user) await loadUserData(data.session.user.id);
+      })
+      .catch((error) => {
+        console.error("[Auth] Failed to initialize session", error);
+        clearUserData();
+      })
+      .finally(() => {
+        if (mountedRef.current) setLoading(false);
+      });
 
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    return () => {
+      mountedRef.current = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [clearUserData, loadUserData]);
 
   const value = useMemo<AuthContextValue>(() => {
     const isAuditor = roles.includes("auditor");
@@ -136,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     };
-  }, [loading, session, profile, roles, lojas, lojaRoles]);
+  }, [loading, loadUserData, session, profile, roles, lojas, lojaRoles]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

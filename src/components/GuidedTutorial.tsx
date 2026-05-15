@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { readStorage, writeStorage } from "@/lib/storage";
 
 type Step = {
   key: string;
@@ -59,6 +60,21 @@ export function GuidedTutorial() {
 
   const progress = useMemo(() => Math.round(((current + 1) / steps.length) * 100), [current]);
 
+  const close = useCallback((remember = false) => {
+    if (remember) writeStorage("local", STORAGE_KEY, "done");
+    setOpen(false);
+  }, []);
+
+  const previous = useCallback(() => setCurrent((value) => Math.max(0, value - 1)), []);
+
+  const next = useCallback(() => {
+    if (current === steps.length - 1) {
+      close(true);
+      return;
+    }
+    setCurrent((value) => Math.min(steps.length - 1, value + 1));
+  }, [close, current]);
+
   useEffect(() => {
     const start = () => {
       setCurrent(0);
@@ -70,7 +86,7 @@ export function GuidedTutorial() {
 
   useEffect(() => {
     if (!session) return;
-    if (localStorage.getItem(STORAGE_KEY) === "done") return;
+    if (readStorage("local", STORAGE_KEY) === "done") return;
     const timer = window.setTimeout(() => setOpen(true), 700);
     return () => window.clearTimeout(timer);
   }, [session]);
@@ -83,7 +99,12 @@ export function GuidedTutorial() {
       const target = nodes.find((node) => {
         const box = node.getBoundingClientRect();
         const style = window.getComputedStyle(node);
-        return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+        return (
+          box.width > 0 &&
+          box.height > 0 &&
+          style.visibility !== "hidden" &&
+          style.display !== "none"
+        );
       });
 
       if (!target) {
@@ -119,26 +140,17 @@ export function GuidedTutorial() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  });
-
-  const close = (remember = false) => {
-    if (remember) localStorage.setItem(STORAGE_KEY, "done");
-    setOpen(false);
-  };
-
-  const previous = () => setCurrent((value) => Math.max(0, value - 1));
-  const next = () => {
-    if (current === steps.length - 1) {
-      close(true);
-      return;
-    }
-    setCurrent((value) => Math.min(steps.length - 1, value + 1));
-  };
+  }, [close, next, open, previous]);
 
   if (!session || !open) return null;
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tour-title"
+    >
       <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
 
       {rect && (
@@ -176,7 +188,10 @@ export function GuidedTutorial() {
         <p className="text-sm leading-relaxed text-muted-foreground">{step.description}</p>
 
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-gradient-primary transition-all" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full rounded-full bg-gradient-primary transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">

@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ScanFace, Trash2, Loader2, Plus, ShieldCheck } from "lucide-react";
+import { ScanFace, Trash2, Loader2, Plus, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import {
-  listFaceCredentials,
-  deleteFaceCredential,
-} from "@/lib/webauthn.functions";
+import { listFaceCredentials, deleteFaceCredential } from "@/lib/webauthn.functions";
 import { useFaceEnroll, isFaceAuthSupported } from "@/hooks/useFaceAuth";
 
 type Cred = {
@@ -25,7 +22,7 @@ export function FaceIdCard() {
   const [deviceName, setDeviceName] = useState("");
   const supported = typeof window !== "undefined" && isFaceAuthSupported();
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const rows = await listFn();
@@ -35,12 +32,11 @@ export function FaceIdCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [listFn]);
 
   useEffect(() => {
     void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
   const onEnroll = async () => {
     const ok = await enroll(deviceName.trim() || undefined);
@@ -72,8 +68,8 @@ export function FaceIdCard() {
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-semibold">Login por biometria</h2>
-            <p className="text-xs text-muted-foreground break-words">
-              Use Face ID, Touch ID ou biometria do Android para entrar sem senha.
+            <p className="break-words text-xs text-muted-foreground">
+              Use Face ID, Touch ID, Windows Hello ou biometria do Android para entrar sem senha.
             </p>
           </div>
         </div>
@@ -85,23 +81,29 @@ export function FaceIdCard() {
       </div>
 
       {!supported ? (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-          Seu dispositivo/navegador não suporta autenticação biométrica WebAuthn.
-        </p>
+        <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <div className="font-semibold">Biometria indisponivel neste acesso.</div>
+            <div className="mt-1 text-amber-200/80">
+              Use HTTPS ou localhost e um navegador com WebAuthn habilitado.
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
-              placeholder="Nome do dispositivo (ex: iPhone do João)"
+              placeholder="Nome do dispositivo (ex: iPhone do Joao)"
               className="h-10 flex-1 rounded-xl border border-border bg-background/50 px-3 text-sm outline-none focus:border-primary"
               maxLength={80}
             />
             <button
               type="button"
               onClick={onEnroll}
-              disabled={enrolling}
+              disabled={enrolling || loading}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-primary px-4 text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50"
             >
               {enrolling ? (
@@ -124,30 +126,30 @@ export function FaceIdCard() {
               </p>
             ) : (
               <ul className="space-y-2">
-                {creds.map((c) => (
+                {creds.map((credential) => (
                   <li
-                    key={c.id}
+                    key={credential.id}
                     className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background/40 p-3"
                   >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">
-                        {c.device_name ?? "Dispositivo"}
+                        {credential.device_name ?? "Dispositivo"}
                       </div>
                       <div className="text-[11px] text-muted-foreground">
-                        Cadastrado {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                        {c.last_used_at
-                          ? ` • Último uso ${new Date(c.last_used_at).toLocaleDateString("pt-BR")}`
-                          : " • Nunca utilizado"}
+                        Cadastrado {new Date(credential.created_at).toLocaleDateString("pt-BR")}
+                        {credential.last_used_at
+                          ? ` · Ultimo uso ${new Date(credential.last_used_at).toLocaleDateString("pt-BR")}`
+                          : " · Nunca utilizado"}
                       </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => onDelete(c.id)}
-                      disabled={deletingId === c.id}
+                      onClick={() => onDelete(credential.id)}
+                      disabled={deletingId === credential.id}
                       className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-destructive hover:bg-destructive/10 disabled:opacity-50"
                       aria-label="Remover"
                     >
-                      {deletingId === c.id ? (
+                      {deletingId === credential.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Trash2 className="h-4 w-4" />
