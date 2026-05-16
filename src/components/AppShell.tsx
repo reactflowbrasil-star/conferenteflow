@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const startTutorial = () => window.dispatchEvent(new Event("conferflow:start-tutorial"));
 
   return (
-    <div className="relative min-h-[100dvh] pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
+    <div className="relative min-h-[100dvh] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="px-5 py-5">
