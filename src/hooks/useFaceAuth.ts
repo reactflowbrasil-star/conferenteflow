@@ -125,12 +125,20 @@ export function useFaceLogin() {
       const options = await startFn({ data: { email: normalizedEmail } });
       const response = await startAuthentication({ optionsJSON: options });
       const { otp } = await finishFn({ data: { email: normalizedEmail, response } });
-      const { error } = await supabase.auth.verifyOtp({
-        email: normalizedEmail,
-        token: otp,
-        type: "email",
-      });
-      if (error) throw error;
+      let verifyError: Error | null = null;
+      for (const type of ["magiclink", "email"] as const) {
+        const { error } = await supabase.auth.verifyOtp({
+          email: normalizedEmail,
+          token: otp,
+          type,
+        });
+        if (!error) {
+          verifyError = null;
+          break;
+        }
+        verifyError = error;
+      }
+      if (verifyError) throw verifyError;
       toast.success("Bem-vindo!");
       return true;
     } catch (err) {
