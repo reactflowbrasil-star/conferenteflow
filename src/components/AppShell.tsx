@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const startTutorial = () => window.dispatchEvent(new Event("conferflow:start-tutorial"));
 
   return (
-    <div className="relative min-h-[100dvh] pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
+    <div className="relative min-h-[100dvh] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="px-5 py-5">
@@ -142,45 +142,48 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="relative min-w-0 pb-2 md:pb-0">{children}</main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5 gap-0.5 px-1.5 py-2">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-[max(env(safe-area-inset-bottom),0.25rem)] backdrop-blur md:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-5 px-1 pt-1.5">
           {navItems.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             const Icon = item.icon;
-            if (item.primary) {
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  data-tour={item.tourKey}
-                  className="-mt-6 flex flex-col items-center justify-center"
-                >
-                  <div
-                    className={cn(
-                      "grid h-[52px] w-[52px] place-items-center rounded-2xl bg-gradient-primary shadow-glow transition-transform min-[380px]:h-14 min-[380px]:w-14",
-                      active ? "scale-105" : "scale-100",
-                    )}
-                  >
-                    <Icon className="h-6 w-6 text-primary-foreground" strokeWidth={2.5} />
-                  </div>
-                  <span className="mt-1 text-[9px] font-semibold uppercase text-foreground min-[380px]:text-[10px]">
-                    {item.mobileLabel}
-                  </span>
-                </Link>
-              );
-            }
             return (
               <Link
                 key={item.to}
                 to={item.to}
                 data-tour={item.tourKey}
                 className={cn(
-                  "flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium uppercase transition-colors min-[380px]:text-[10px]",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-colors",
+                  active && !item.primary && "text-primary",
+                  !active && !item.primary && "text-muted-foreground",
                 )}
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className="max-w-full truncate">{item.mobileLabel}</span>
+                <span
+                  className={cn(
+                    "grid place-items-center rounded-xl transition-all",
+                    item.primary
+                      ? "h-11 w-11 bg-gradient-primary text-primary-foreground shadow-glow"
+                      : "h-8 w-8",
+                    active && !item.primary && "bg-primary/10",
+                  )}
+                >
+                  <Icon
+                    className={cn(item.primary ? "h-5 w-5" : "h-[18px] w-[18px]")}
+                    strokeWidth={item.primary ? 2.5 : 2}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "max-w-full truncate text-[10px] font-semibold",
+                    item.primary
+                      ? "text-foreground"
+                      : active
+                        ? "text-primary"
+                        : "text-muted-foreground",
+                  )}
+                >
+                  {item.mobileLabel}
+                </span>
               </Link>
             );
           })}

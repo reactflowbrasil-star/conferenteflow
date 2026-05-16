@@ -13,14 +13,14 @@ export function IntroScreen() {
     writeStorage("session", STORAGE_KEY, "yes");
     setLeaving(true);
     if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current);
-    exitTimerRef.current = window.setTimeout(() => setVisible(false), 650);
+    exitTimerRef.current = setTimeout(() => setVisible(false), 650);
   }, []);
 
   useEffect(() => {
     if (readStorage("session", STORAGE_KEY) === "yes") return;
 
     setVisible(true);
-    const timer = window.setTimeout(finish, INTRO_DURATION_MS);
+    const timer = setTimeout(finish, INTRO_DURATION_MS);
     return () => {
       window.clearTimeout(timer);
       if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current);
