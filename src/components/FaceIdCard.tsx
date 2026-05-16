@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ScanFace, Trash2, Loader2, Plus, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { listFaceCredentials, deleteFaceCredential } from "@/lib/webauthn.functions";
-import { useFaceEnroll, getFaceAuthUnavailableReason } from "@/hooks/useFaceAuth";
+import { useFaceEnroll, getFaceAuthUnavailableReason, isEmbeddedAccess } from "@/hooks/useFaceAuth";
 
 type Cred = {
   id: string;
@@ -21,6 +21,7 @@ export function FaceIdCard() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deviceName, setDeviceName] = useState("");
   const unavailableReason = typeof window === "undefined" ? null : getFaceAuthUnavailableReason();
+  const canOpenFullScreen = typeof window !== "undefined" && isEmbeddedAccess();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -86,6 +87,16 @@ export function FaceIdCard() {
           <div>
             <div className="font-semibold">Biometria indisponivel neste acesso.</div>
             <div className="mt-1 text-amber-200/80">{unavailableReason}</div>
+            {canOpenFullScreen && (
+              <a
+                href={window.location.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex text-xs font-semibold text-amber-100 underline underline-offset-4"
+              >
+                Abrir app em nova aba
+              </a>
+            )}
           </div>
         </div>
       ) : (
