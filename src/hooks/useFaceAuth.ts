@@ -14,10 +14,12 @@ export function getFaceAuthUnavailableReason(): string | null {
   if (typeof window === "undefined") return "Biometria disponivel apenas no navegador.";
   const host = window.location.hostname;
   const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  const permissionsPolicyReason = getWebAuthnPermissionsPolicyReason();
 
   if (!window.isSecureContext && !isLocalHost) {
     return "Abra o sistema em HTTPS. Em celular, HTTP por IP de rede bloqueia Face ID, Touch ID e Windows Hello.";
   }
+  if (permissionsPolicyReason) return permissionsPolicyReason;
   if (typeof window.PublicKeyCredential === "undefined") {
     return "Este navegador nao oferece WebAuthn/passkeys.";
   }
@@ -26,6 +28,43 @@ export function getFaceAuthUnavailableReason(): string | null {
     typeof navigator.credentials?.get !== "function"
   ) {
     return "Este navegador nao permite criar ou usar credenciais biometricas.";
+  }
+  return null;
+}
+
+export function isEmbeddedAccess(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+function getWebAuthnPermissionsPolicyReason(): string | null {
+  if (typeof document === "undefined") return null;
+  const policyDocument = document as Document & {
+    permissionsPolicy?: { allowsFeature?: (feature: string) => boolean };
+    featurePolicy?: { allowsFeature?: (feature: string) => boolean };
+  };
+  const allowsFeature =
+    policyDocument.permissionsPolicy?.allowsFeature?.bind(policyDocument.permissionsPolicy) ??
+    policyDocument.featurePolicy?.allowsFeature?.bind(policyDocument.featurePolicy);
+
+  if (allowsFeature) {
+    try {
+      const canCreate = allowsFeature("publickey-credentials-create");
+      const canGet = allowsFeature("publickey-credentials-get");
+      if (!canCreate || !canGet) {
+        return "A biometria esta bloqueada neste preview. Abra o app em tela cheia ou em uma nova aba para cadastrar e entrar com Face ID/Touch ID.";
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  if (isEmbeddedAccess()) {
+    return "A biometria pode ser bloqueada dentro do preview. Abra o app em tela cheia ou em uma nova aba para cadastrar e entrar com Face ID/Touch ID.";
   }
   return null;
 }
@@ -49,6 +88,13 @@ async function hasPlatformAuthenticator() {
 
 function formatFaceAuthError(err: unknown, fallback: string) {
   const msg = err instanceof Error ? err.message : fallback;
+  if (
+    msg.includes("publickey-credentials-create") ||
+    msg.includes("publickey-credentials-get") ||
+    msg.includes("Permissions Policy")
+  ) {
+    return "A biometria esta bloqueada neste preview. Abra o app em tela cheia ou em uma nova aba e tente novamente.";
+  }
   if (msg.includes("NotAllowedError")) {
     return "O navegador cancelou a biometria. Tente novamente, confirme no Face ID/Touch ID/Windows Hello e remova cadastros antigos se este dispositivo ja estiver salvo.";
   }
