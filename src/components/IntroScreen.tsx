@@ -20,7 +20,7 @@ export function IntroScreen() {
     if (readStorage("session", STORAGE_KEY) === "yes") return;
 
     setVisible(true);
-    const timer = window.setTimeout(finish, INTRO_DURATION_MS);
+    const timer = setTimeout(finish, INTRO_DURATION_MS);
     return () => {
       window.clearTimeout(timer);
       if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current);
