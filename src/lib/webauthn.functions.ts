@@ -12,7 +12,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const RP_NAME = "ConferFlow";
-const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
 function getRequestOrigin(): string {
   const origin = getRequestHeader("origin");
@@ -78,12 +78,6 @@ export const startFaceRegistration = createServerFn({ method: "POST" })
         .toLowerCase() || "usuario@conferflow.local";
     const rpID = getRpId();
 
-    const { data: existing, error: existingError } = await supabaseAdmin
-      .from("webauthn_credentials")
-      .select("credential_id, transports")
-      .eq("user_id", userId);
-    if (existingError) throw new Error(existingError.message);
-
     const options = await generateRegistrationOptions({
       rpName: RP_NAME,
       rpID,
@@ -95,12 +89,7 @@ export const startFaceRegistration = createServerFn({ method: "POST" })
       authenticatorSelection: {
         userVerification: "required",
         residentKey: "preferred",
-        authenticatorAttachment: "platform",
       },
-      excludeCredentials: (existing ?? []).map((credential) => ({
-        id: credential.credential_id,
-        transports: toTransports(credential.transports),
-      })),
     });
 
     const { error: deleteError } = await supabaseAdmin

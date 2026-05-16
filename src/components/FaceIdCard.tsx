@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ScanFace, Trash2, Loader2, Plus, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { listFaceCredentials, deleteFaceCredential } from "@/lib/webauthn.functions";
-import { useFaceEnroll, isFaceAuthSupported } from "@/hooks/useFaceAuth";
+import { useFaceEnroll, getFaceAuthUnavailableReason } from "@/hooks/useFaceAuth";
 
 type Cred = {
   id: string;
@@ -20,7 +20,7 @@ export function FaceIdCard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deviceName, setDeviceName] = useState("");
-  const supported = typeof window !== "undefined" && isFaceAuthSupported();
+  const unavailableReason = typeof window === "undefined" ? null : getFaceAuthUnavailableReason();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -80,14 +80,12 @@ export function FaceIdCard() {
         )}
       </div>
 
-      {!supported ? (
+      {unavailableReason ? (
         <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <div className="font-semibold">Biometria indisponivel neste acesso.</div>
-            <div className="mt-1 text-amber-200/80">
-              Use HTTPS ou localhost e um navegador com WebAuthn habilitado.
-            </div>
+            <div className="mt-1 text-amber-200/80">{unavailableReason}</div>
           </div>
         </div>
       ) : (
@@ -138,8 +136,8 @@ export function FaceIdCard() {
                       <div className="text-[11px] text-muted-foreground">
                         Cadastrado {new Date(credential.created_at).toLocaleDateString("pt-BR")}
                         {credential.last_used_at
-                          ? ` · Ultimo uso ${new Date(credential.last_used_at).toLocaleDateString("pt-BR")}`
-                          : " · Nunca utilizado"}
+                          ? ` - Ultimo uso ${new Date(credential.last_used_at).toLocaleDateString("pt-BR")}`
+                          : " - Nunca utilizado"}
                       </div>
                     </div>
                     <button

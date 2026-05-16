@@ -165,7 +165,7 @@ export function GuidedTutorial() {
         />
       )}
 
-      <div className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto max-w-md rounded-2xl border border-border bg-card p-4 shadow-elevated sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[420px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:p-5">
+      <div className="absolute inset-x-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] mx-auto max-h-[calc(100dvh-2rem-env(safe-area-inset-bottom))] max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-elevated sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:w-[420px] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-primary">

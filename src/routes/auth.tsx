@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Loader2, Mail, Lock, User as UserIcon, ScanFace } from "lucide-react";
-import { useFaceLogin, isFaceAuthSupported } from "@/hooks/useFaceAuth";
+import { useFaceLogin, getFaceAuthUnavailableReason } from "@/hooks/useFaceAuth";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -24,7 +24,8 @@ function AuthPage() {
   const [nome, setNome] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { login: faceLogin, busy: faceBusy } = useFaceLogin();
-  const faceSupported = typeof window !== "undefined" && isFaceAuthSupported();
+  const faceUnavailableReason =
+    typeof window === "undefined" ? null : getFaceAuthUnavailableReason();
 
   useEffect(() => {
     if (!loading && session && pathname === "/auth") {
@@ -83,14 +84,14 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-[100svh] overflow-hidden bg-background">
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-background">
       <div className="grid-bg absolute inset-0 opacity-30" />
-      <div className="relative mx-auto flex min-h-[100svh] max-w-md flex-col items-center justify-center px-3 py-6 sm:px-5 sm:py-10">
-        <div className="mb-6">
-          <Logo className="w-40 sm:w-44" />
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-md flex-col items-center justify-start px-3 pb-[max(env(safe-area-inset-bottom),1rem)] pt-5 sm:justify-center sm:px-5 sm:py-10">
+        <div className="mb-4 sm:mb-6">
+          <Logo className="w-36 sm:w-44" />
         </div>
 
-        <div className="w-full rounded-2xl border border-border bg-card/80 p-5 shadow-elevated backdrop-blur sm:rounded-3xl sm:p-6">
+        <div className="w-full rounded-2xl border border-border bg-card/80 p-4 shadow-elevated backdrop-blur sm:rounded-3xl sm:p-6">
           <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
             {mode === "signin" ? "Entrar" : "Criar conta"}
           </div>
@@ -103,7 +104,7 @@ function AuthPage() {
               : "Crie sua conta. Um supervisor liberará seu papel e lojas."}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <form onSubmit={handleSubmit} className="mt-4 space-y-3 sm:mt-5">
             {mode === "signup" && (
               <Field icon={<UserIcon className="h-4 w-4" />}>
                 <input
@@ -171,13 +172,16 @@ function AuthPage() {
               Continuar com Google
             </button>
 
-            {mode === "signin" && faceSupported && (
+            {mode === "signin" && (
               <button
                 type="button"
                 onClick={() => faceLogin(email)}
-                disabled={faceBusy || !email}
+                disabled={faceBusy || !email || Boolean(faceUnavailableReason)}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                title={!email ? "Digite seu e-mail primeiro" : "Entrar com biometria"}
+                title={
+                  faceUnavailableReason ??
+                  (!email ? "Digite seu e-mail primeiro" : "Entrar com biometria")
+                }
               >
                 {faceBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -186,6 +190,11 @@ function AuthPage() {
                 )}
                 Entrar com biometria
               </button>
+            )}
+            {mode === "signin" && faceUnavailableReason && (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                {faceUnavailableReason}
+              </p>
             )}
           </div>
 
@@ -198,7 +207,7 @@ function AuthPage() {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-muted-foreground">
+        <p className="mt-4 text-center text-[11px] text-muted-foreground sm:mt-6">
           Após o cadastro, um supervisor define seu papel (conferente, supervisor ou auditor) e suas
           lojas.
         </p>

@@ -10,26 +10,56 @@ import {
   finishFaceLogin,
 } from "@/lib/webauthn.functions";
 
+export function getFaceAuthUnavailableReason(): string | null {
+  if (typeof window === "undefined") return "Biometria disponivel apenas no navegador.";
+  const host = window.location.hostname;
+  const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+
+  if (!window.isSecureContext && !isLocalHost) {
+    return "Abra o sistema em HTTPS. Em celular, HTTP por IP de rede bloqueia Face ID, Touch ID e Windows Hello.";
+  }
+  if (typeof window.PublicKeyCredential === "undefined") {
+    return "Este navegador nao oferece WebAuthn/passkeys.";
+  }
+  if (
+    typeof navigator.credentials?.create !== "function" ||
+    typeof navigator.credentials?.get !== "function"
+  ) {
+    return "Este navegador nao permite criar ou usar credenciais biometricas.";
+  }
+  return null;
+}
+
 export function isFaceAuthSupported(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.isSecureContext &&
-    typeof window.PublicKeyCredential !== "undefined" &&
-    typeof navigator.credentials?.create === "function" &&
-    typeof navigator.credentials?.get === "function"
-  );
+  return getFaceAuthUnavailableReason() === null;
+}
+
+async function hasPlatformAuthenticator() {
+  if (typeof window === "undefined" || typeof window.PublicKeyCredential === "undefined") {
+    return false;
+  }
+  const checker = window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable;
+  if (typeof checker !== "function") return true;
+  try {
+    return await checker.call(window.PublicKeyCredential);
+  } catch {
+    return true;
+  }
 }
 
 function formatFaceAuthError(err: unknown, fallback: string) {
   const msg = err instanceof Error ? err.message : fallback;
   if (msg.includes("NotAllowedError")) {
-    return "Operacao cancelada ou tempo esgotado. Tente novamente e confirme no Face ID/Touch ID.";
+    return "O navegador cancelou a biometria. Tente novamente, confirme no Face ID/Touch ID/Windows Hello e remova cadastros antigos se este dispositivo ja estiver salvo.";
   }
   if (msg.includes("InvalidStateError")) {
     return "Este dispositivo ja esta cadastrado para este usuario.";
   }
   if (msg.includes("SecurityError")) {
     return "Biometria exige HTTPS ou localhost. Abra o sistema em um endereco seguro.";
+  }
+  if (msg.includes("HTTPS") || msg.includes("WebAuthn/passkeys")) {
+    return msg;
   }
   if (msg.includes("not supported") || msg.includes("not eligible")) {
     return "Este navegador ou dispositivo nao oferece biometria WebAuthn para este site.";
@@ -43,8 +73,13 @@ export function useFaceEnroll() {
   const [busy, setBusy] = useState(false);
 
   const enroll = async (deviceName?: string) => {
-    if (!isFaceAuthSupported()) {
-      toast.error("Este dispositivo nao suporta autenticacao biometrica.");
+    const unavailableReason = getFaceAuthUnavailableReason();
+    if (unavailableReason) {
+      toast.error(unavailableReason);
+      return false;
+    }
+    if (!(await hasPlatformAuthenticator())) {
+      toast.error("Nenhum Face ID, Touch ID, Windows Hello ou biometria Android foi encontrado.");
       return false;
     }
     setBusy(true);
@@ -71,8 +106,13 @@ export function useFaceLogin() {
   const [busy, setBusy] = useState(false);
 
   const login = async (email: string) => {
-    if (!isFaceAuthSupported()) {
-      toast.error("Este dispositivo nao suporta autenticacao biometrica.");
+    const unavailableReason = getFaceAuthUnavailableReason();
+    if (unavailableReason) {
+      toast.error(unavailableReason);
+      return false;
+    }
+    if (!(await hasPlatformAuthenticator())) {
+      toast.error("Nenhum Face ID, Touch ID, Windows Hello ou biometria Android foi encontrado.");
       return false;
     }
     if (!email) {

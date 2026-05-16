@@ -1,5 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, PackageCheck, ScanBarcode, Boxes, Settings, LogOut, HelpCircle } from "lucide-react";
+import {
+  LayoutDashboard,
+  PackageCheck,
+  ScanBarcode,
+  Boxes,
+  Settings,
+  LogOut,
+  HelpCircle,
+} from "lucide-react";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -7,9 +15,28 @@ import type { ReactNode } from "react";
 
 const navItems = [
   { to: "/", label: "Painel", mobileLabel: "Painel", tourKey: "painel", icon: LayoutDashboard },
-  { to: "/recebimentos", label: "Recebimentos", mobileLabel: "NFs", tourKey: "recebimentos", icon: PackageCheck },
-  { to: "/conferencia", label: "Bipar", mobileLabel: "Bipar", tourKey: "bipar", icon: ScanBarcode, primary: true },
-  { to: "/inventario", label: "Inventario", mobileLabel: "Estoque", tourKey: "inventario", icon: Boxes },
+  {
+    to: "/recebimentos",
+    label: "Recebimentos",
+    mobileLabel: "NFs",
+    tourKey: "recebimentos",
+    icon: PackageCheck,
+  },
+  {
+    to: "/conferencia",
+    label: "Bipar",
+    mobileLabel: "Bipar",
+    tourKey: "bipar",
+    icon: ScanBarcode,
+    primary: true,
+  },
+  {
+    to: "/inventario",
+    label: "Inventario",
+    mobileLabel: "Estoque",
+    tourKey: "inventario",
+    icon: Boxes,
+  },
   { to: "/ajustes", label: "Ajustes", mobileLabel: "Ajustes", tourKey: "ajustes", icon: Settings },
 ];
 
@@ -17,11 +44,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { profile, user, roles, lojas, isAuditor, signOut } = useAuth();
   const roleLabel = roles[0] ? roles[0][0].toUpperCase() + roles[0].slice(1) : "Sem papel";
-  const lojaLabel = isAuditor ? "Todas as lojas" : lojas[0] ?? "Sem loja";
+  const lojaLabel = isAuditor ? "Todas as lojas" : (lojas[0] ?? "Sem loja");
   const startTutorial = () => window.dispatchEvent(new Event("conferflow:start-tutorial"));
 
   return (
-    <div className="relative min-h-screen pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
+    <div className="relative min-h-[100dvh] pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64">
       {/* Sidebar (desktop) */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="px-5 py-5">
@@ -112,10 +139,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="relative min-w-0">{children}</main>
+      <main className="relative min-w-0 pb-2 md:pb-0">{children}</main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-[max(env(safe-area-inset-bottom),0.5rem)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5 gap-0.5 px-1.5 py-2">
           {navItems.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
@@ -123,10 +150,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             if (item.primary) {
               return (
                 <Link
-                key={item.to}
-                to={item.to}
-                data-tour={item.tourKey}
-                className="-mt-6 flex flex-col items-center justify-center"
+                  key={item.to}
+                  to={item.to}
+                  data-tour={item.tourKey}
+                  className="-mt-6 flex flex-col items-center justify-center"
                 >
                   <div
                     className={cn(

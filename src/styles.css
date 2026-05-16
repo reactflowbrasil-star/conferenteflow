@@ -106,13 +106,13 @@
     -webkit-font-smoothing: antialiased;
   }
   body {
-    min-height: 100svh;
+    min-height: 100dvh;
     background-image: var(--gradient-glow);
     background-repeat: no-repeat;
     background-size: 100% 600px;
   }
   #root {
-    min-height: 100svh;
+    min-height: 100dvh;
   }
   img,
   svg,
