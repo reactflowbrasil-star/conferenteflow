@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Loader2, Mail, Lock, User as UserIcon, ScanFace } from "lucide-react";
-import { useFaceLogin, getFaceAuthUnavailableReason } from "@/hooks/useFaceAuth";
+import { useFaceLogin, getFaceAuthUnavailableReason, isEmbeddedAccess } from "@/hooks/useFaceAuth";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -26,6 +26,7 @@ function AuthPage() {
   const { login: faceLogin, busy: faceBusy } = useFaceLogin();
   const faceUnavailableReason =
     typeof window === "undefined" ? null : getFaceAuthUnavailableReason();
+  const canOpenFullScreen = typeof window !== "undefined" && isEmbeddedAccess();
 
   useEffect(() => {
     if (!loading && session && pathname === "/auth") {
@@ -194,6 +195,16 @@ function AuthPage() {
             {mode === "signin" && faceUnavailableReason && (
               <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
                 {faceUnavailableReason}
+                {canOpenFullScreen && (
+                  <a
+                    href={window.location.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 block font-semibold text-amber-100 underline underline-offset-4"
+                  >
+                    Abrir app em nova aba
+                  </a>
+                )}
               </p>
             )}
           </div>
