@@ -13,7 +13,7 @@ export function IntroScreen() {
     writeStorage("session", STORAGE_KEY, "yes");
     setLeaving(true);
     if (exitTimerRef.current) window.clearTimeout(exitTimerRef.current);
-    exitTimerRef.current = window.setTimeout(() => setVisible(false), 650);
+    exitTimerRef.current = setTimeout(() => setVisible(false), 650);
   }, []);
 
   useEffect(() => {
